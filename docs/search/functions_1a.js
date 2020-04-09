@@ -89,7 +89,6 @@ var searchData=
   ['_7ewfilebuf',['~wfilebuf',['http://en.cppreference.com/w/cpp/io/basic_filebuf/~basic_filebuf.html',1,'std::wfilebuf']]],
   ['_7ewiostream',['~wiostream',['http://en.cppreference.com/w/cpp/io/basic_iostream/~basic_iostream.html',1,'std::wiostream']]],
   ['_7ewistream',['~wistream',['http://en.cppreference.com/w/cpp/io/basic_istream/~basic_istream.html',1,'std::wistream']]],
-  ['_7eworkstealingqueue',['~WorkStealingQueue',['../classtf_1_1WorkStealingQueue.html#acb22a49430fd235aa2ae4770d1cd662b',1,'tf::WorkStealingQueue']]],
   ['_7ewostream',['~wostream',['http://en.cppreference.com/w/cpp/io/basic_ostream/~basic_ostream.html',1,'std::wostream']]],
   ['_7ewregex',['~wregex',['http://en.cppreference.com/w/cpp/regex/basic_regex/~basic_regex.html',1,'std::wregex']]],
   ['_7ewsmatch',['~wsmatch',['http://en.cppreference.com/w/cpp/regex/match_results/~match_results.html',1,'std::wsmatch']]],

@@ -2,35 +2,68 @@
 cmake_minimum_required (VERSION 3.9)
 MESSAGE(STATUS "CMAKE_ROOT: " ${CMAKE_ROOT})
 
-# Project name
-project(Cpp-Taskflow VERSION 2.2.0 LANGUAGES CXX)
-
 # Turn on the verbose
 set(CMAKE_VERBOSE_MAKEFILE ON)
+
+# Project name
+project(Cpp-Taskflow VERSION 2.4.0 LANGUAGES CXX)
+
+# build options
+option(TF_ENABLE_CUDA "Enables build of cuda code" OFF)
+option(TF_BUILD_BENCHMARKS "Enables build of benchmarks" OFF)
+
+# Include additional language check
+include(CheckLanguage)
 
 # Compiler vendors
 ## g++
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "7.3")
-    message(FATAL_ERROR "\nCpp-Taskflow requires g++ at least v7.3")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
+    message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
+    message(FATAL_ERROR "\nCpp-Taskflow requires g++ at least v5.0")
   endif()
 ## clang++
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "6.0")
-    message(FATAL_ERROR "\nCpp-Taskflow requires clang++ at least v6.0")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.0")
+    message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
+    message(FATAL_ERROR "\nCpp-Taskflow requires clang++ at least v4.0")
   endif() 
+## AppleClang
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "8.0")
+    message(FATAL_ERROR "\nCpp-Taskflow requires AppleClang at least v8.0")
+  endif()
 ## microsoft visual c++
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   if(NOT MSVC_VERSION GREATER_EQUAL 1914)
+    message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
     message(FATAL_ERROR "\nCpp-Taskflow requires MSVC++ at least v14.14") 
   endif()
 else()
   message(FATAL_ERROR "\n\
 Cpp-Taskflow currently supports the following compilers:\n\
-- g++ v7.3 or above\n\
-- clang++ v6.0 or above\n\
-- MSVC++ v19.14 or above\n\
+  - g++ v5.0 or above\n\
+  - clang++ v4.0 or above\n\
+  - MSVC++ v19.14 or above\n\
+  - AppleClang v8 or above\n\
 ")
+endif()
+
+# NVCC Compiler
+# https://cliutils.gitlab.io/modern-cmake/chapters/packages/CUDA.html
+if(${TF_ENABLE_CUDA})
+
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+  enable_language(CUDA)
+  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10")
+    message(STATUS "CMAKE_CUDA_COMPILER_VERSION: ${CMAKE_CUDA_COMPILER_VERSION}")
+    message(FATAL_ERROR "\nCpp-Taskflow requires CUDA at least v10")
+  endif()
+else()
+  message(FATAL_ERROR "No CUDA support")
+endif()
+
 endif()
 
 # defult release build
@@ -60,10 +93,25 @@ add_library(tf::error_settings ALIAS error_settings)
 target_compile_options(
   error_settings
   INTERFACE
-  $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wfatal-errors>
-  $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wfatal-errors>
-  $<$<CXX_COMPILER_ID:MSVC>:/W3 /permissive->
+  $<$<CXX_COMPILER_ID:AppleClang>:-Wall -Wextra -Wfatal-errors>
+  $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:Clang>>:-Wall -Wextra -Wfatal-errors>
+  $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:GNU>>:-Wall -Wextra -Wfatal-errors>
+  $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/W3 /permissive->
+  #$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra,-Wfatal-errors>
+  #$<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wfatal-errors>
+  #$<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wfatal-errors>
+  #$<$<CXX_COMPILER_ID:MSVC>:/W3 /permissive->
+  #$<$<CXX_COMPILER_ID:NVIDIA>:-Xcompiler=-Wall,-Wextra,-Wfatal-errors>
 )
+
+if(${TF_ENABLE_CUDA})
+  target_compile_options(
+    error_settings
+    BEFORE
+    INTERFACE
+    $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall,-Wextra,-Wfatal-errors>
+  )
+endif()
 
 # additional features
 add_library(features_settings INTERFACE)
@@ -85,51 +133,54 @@ target_compile_definitions(
 # /Ox - Full optimization
 # /Oy- do not suppress frame pointers (recommended for debugging)
 #
-add_library(optimize_settings INTERFACE)
-add_library(tf::optimize_settings ALIAS optimize_settings)
-
-target_compile_options(
-  optimize_settings INTERFACE
-  $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:Clang>>:-O2 -march=native>
-  $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU>>:-O2 -march=native>
-  $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2 -DNDEBUG /MP>
-  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU>>:-O0 -g>
-  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>>:-O0 -g>
-  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:MSVC>>:/Zi /FS /DEBUG /Od /MP /MDd /Oy->
-)
-
+#add_library(optimize_settings INTERFACE)
+#add_library(tf::optimize_settings ALIAS optimize_settings)
+#
+#target_compile_options(
+#  optimize_settings INTERFACE
+#  $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:Clang>>:-O2 -march=native>
+#  #$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:AppleClang>>:-O2 -march=native>
+#  $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU>>:-O2 -march=native>
+#  $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2 -DNDEBUG /MP>
+#  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU>>:-O0 -g>
+#  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:Clang>>:-O0 -g>
+#  #$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:AppleClang>>:-O0 -g>
+#  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:MSVC>>:/Zi /FS /DEBUG /Od /MP /MDd /Oy->
+#)
+#
 add_library(default_settings INTERFACE)
 add_library(tf::default_settings ALIAS default_settings)
 target_link_libraries(
   default_settings 
   INTERFACE 
   tf::error_settings 
-  tf::optimize_settings 
+  #tf::optimize_settings 
   tf::features_settings
 )
 
 # CXX target properties
-#set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
-
-# build options
-option(TF_BUILD_EXAMPLES "Enables build of examples" ON)
-option(TF_BUILD_TESTS "Enables build of tests" ON)
-option(TF_BUILD_BENCHMARKS "Enables build of benchmarks" OFF)
 
 # installation path
 set(TF_INC_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include")
 set(TF_LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
-set(TF_UTEST_DIR ${PROJECT_SOURCE_DIR}/unittest)
-set(TF_EXAMPLE_DIR ${PROJECT_SOURCE_DIR}/example)
-set(TF_BENCHMARK_DIR ${PROJECT_SOURCE_DIR}/benchmark)
+set(TF_UTEST_DIR ${PROJECT_SOURCE_DIR}/unittests)
+set(TF_EXAMPLE_DIR ${PROJECT_SOURCE_DIR}/examples)
+set(TF_BENCHMARK_DIR ${PROJECT_SOURCE_DIR}/benchmarks)
+set(TF_3RD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rd-party)
 
 message(STATUS "CMAKE_HOST_SYSTEM: ${CMAKE_HOST_SYSTEM}")
 message(STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
 message(STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER})
+message(STATUS "CMAKE_CXX_COMPILER_ID: " ${CMAKE_CXX_COMPILER_ID})
 message(STATUS "CMAKE_CXX_COMPILER_VERSION: " ${CMAKE_CXX_COMPILER_VERSION})
 message(STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS})
+message(STATUS "CMAKE_CUDA_COMPILER: " ${CMAKE_CUDA_COMPILER})
+message(STATUS "CMAKE_CUDA_COMPILER_ID: " ${CMAKE_CUDA_COMPILER_ID})
+message(STATUS "CMAKE_CUDA_COMPILER_VERSION: " ${CMAKE_CUDA_COMPILER_VERSION})
+message(STATUS "CMAKE_CUDA_FLAGS: " ${CMAKE_CUDA_FLAGS})
 message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR: " ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "CMAKE_CURRENT_BINARY_DIR: " ${CMAKE_CURRENT_BINARY_DIR})
@@ -138,14 +189,14 @@ message(STATUS "CMAKE_INSTALL_PREFIX: " ${CMAKE_INSTALL_PREFIX})
 message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 message(STATUS "CMAKE_PREFIX_PATH: " ${CMAKE_PREFIX_PATH})
 message(STATUS "PROJECT_NAME: " ${PROJECT_NAME})
-message(STATUS "TF_BUILD_EXAMPLES: " ${TF_BUILD_EXAMPLES})
-message(STATUS "TF_BUILD_TESTS: " ${TF_BUILD_TESTS})
+message(STATUS "TF_ENABLE_CUDA: " ${TF_ENABLE_CUDA})
 message(STATUS "TF_BUILD_BENCHMARKS: " ${TF_BUILD_BENCHMARKS})
 message(STATUS "TF_INC_INSTALL_DIR: " ${TF_INC_INSTALL_DIR})
 message(STATUS "TF_LIB_INSTALL_DIR: " ${TF_LIB_INSTALL_DIR})
 message(STATUS "TF_UTEST_DIR: " ${TF_UTEST_DIR})
 message(STATUS "TF_EXAMPLE_DIR: " ${TF_EXAMPLE_DIR})
 message(STATUS "TF_BENCHMARK_DIR: " ${TF_BENCHMARK_DIR})
+message(STATUS "TF_3RD_PARTY_DIR: " ${TF_3RD_PARTY_DIR})
 
 # add the binary tree to the search path for include files
 include_directories(${PROJECT_SOURCE_DIR})
@@ -166,7 +217,7 @@ find_package(Threads REQUIRED)
 
 add_library(${PROJECT_NAME} INTERFACE)
 
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_14)
 target_include_directories(${PROJECT_NAME} INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include/> 
@@ -175,8 +226,6 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 # -----------------------------------------------------------------------------
 # Example program 
 # -----------------------------------------------------------------------------
-
-if(${TF_BUILD_EXAMPLES})
 
 message(STATUS "Building examples ...")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_EXAMPLE_DIR})
@@ -196,9 +245,14 @@ target_link_libraries(
   subflow ${PROJECT_NAME} Threads::Threads tf::default_settings
 )
 
-add_executable(debug ${TF_EXAMPLE_DIR}/debug.cpp)
+add_executable(condition ${TF_EXAMPLE_DIR}/condition.cpp)
 target_link_libraries(
-  debug ${PROJECT_NAME} Threads::Threads tf::default_settings
+  condition ${PROJECT_NAME} Threads::Threads tf::default_settings
+)
+
+add_executable(visualization ${TF_EXAMPLE_DIR}/visualization.cpp)
+target_link_libraries(
+  visualization ${PROJECT_NAME} Threads::Threads tf::default_settings
 )
 
 add_executable(reduce ${TF_EXAMPLE_DIR}/reduce.cpp)
@@ -211,14 +265,9 @@ target_link_libraries(
   parallel_for ${PROJECT_NAME} Threads::Threads tf::default_settings
 )
 
-add_executable(dynamic_traversal ${TF_EXAMPLE_DIR}/dynamic_traversal.cpp)
+add_executable(run ${TF_EXAMPLE_DIR}/run.cpp)
 target_link_libraries(
-  dynamic_traversal ${PROJECT_NAME} Threads::Threads tf::default_settings
-)
-
-add_executable(run_variants ${TF_EXAMPLE_DIR}/run_variants.cpp)
-target_link_libraries(
-  run_variants ${PROJECT_NAME} Threads::Threads tf::default_settings
+  run ${PROJECT_NAME} Threads::Threads tf::default_settings
 )
 
 add_executable(composition ${TF_EXAMPLE_DIR}/composition.cpp)
@@ -226,65 +275,316 @@ target_link_libraries(
  composition ${PROJECT_NAME} Threads::Threads tf::default_settings
 )
 
-#add_executable(dice_pools ${TF_EXAMPLE_DIR}/dice_pools.cpp)
-#target_link_libraries(dice_pools ${PROJECT_NAME} Threads::Threads)  
-#
-#add_executable(get_best_dice ${TF_EXAMPLE_DIR}/get_best_dice.cpp)
-#target_link_libraries(get_best_dice ${PROJECT_NAME} Threads::Threads)  
+#### CUDA examples
+if(${TF_ENABLE_CUDA})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_EXAMPLE_DIR}/cuda)
 
-endif()
+add_executable(saxpy ${TF_EXAMPLE_DIR}/cuda/saxpy.cu)
+target_link_libraries(
+  saxpy ${PROJECT_NAME} Threads::Threads tf::default_settings
+)
+
+add_executable(device_property ${TF_EXAMPLE_DIR}/cuda/device_property.cu)
+target_link_libraries(
+  device_property ${PROJECT_NAME} Threads::Threads tf::default_settings
+)
+endif(${TF_ENABLE_CUDA})
 
 # -----------------------------------------------------------------------------
 # Unittest
 # -----------------------------------------------------------------------------
-
-if(${TF_BUILD_TESTS})
- 
 enable_testing()
 message(STATUS "Building unit tests ...")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_UTEST_DIR})
 
 # unittest for utility
-add_executable(utility unittest/utility.cpp)
+add_executable(utility ${TF_UTEST_DIR}/utility.cpp)
 target_link_libraries(utility ${PROJECT_NAME} Threads::Threads tf::default_settings)
-target_include_directories(utility PRIVATE ${PROJECT_SOURCE_DIR}/doctest)
-add_test(passive_vector ${TF_UTEST_DIR}/utility -tc=PassiveVector)
-add_test(object_pool    ${TF_UTEST_DIR}/utility -tc=ObjectPool)
-add_test(singular_alloc ${TF_UTEST_DIR}/utility -tc=SingularAllocator)
-
-# unittest for taskflow
-add_executable(taskflow_test_tmp unittest/taskflow.cpp)
-target_link_libraries(taskflow_test_tmp ${PROJECT_NAME} Threads::Threads tf::default_settings)
-target_include_directories(taskflow_test_tmp PRIVATE ${PROJECT_SOURCE_DIR}/doctest)
-set_target_properties(taskflow_test_tmp PROPERTIES OUTPUT_NAME "taskflow")
-add_test(builder          ${TF_UTEST_DIR}/taskflow -tc=Builder)
-add_test(creation         ${TF_UTEST_DIR}/taskflow -tc=Creation)
-add_test(dispatch         ${TF_UTEST_DIR}/taskflow -tc=Dispatch)
-add_test(sequential_runs  ${TF_UTEST_DIR}/taskflow -tc=SequentialRuns)
-add_test(parallel_runs    ${TF_UTEST_DIR}/taskflow -tc=ParallelRuns)
-add_test(parallel_for     ${TF_UTEST_DIR}/taskflow -tc=ParallelFor)
-add_test(parallel_for_idx ${TF_UTEST_DIR}/taskflow -tc=ParallelForOnIndex)
-add_test(reduce           ${TF_UTEST_DIR}/taskflow -tc=Reduce)
-add_test(reduce_min       ${TF_UTEST_DIR}/taskflow -tc=ReduceMin)
-add_test(reduce_max       ${TF_UTEST_DIR}/taskflow -tc=ReduceMax)
-add_test(joined_subflow   ${TF_UTEST_DIR}/taskflow -tc=JoinedSubflow)
-add_test(detached_subflow ${TF_UTEST_DIR}/taskflow -tc=DetachedSubflow)
-add_test(composition-1    ${TF_UTEST_DIR}/taskflow -tc=Composition-1)
-add_test(composition-2    ${TF_UTEST_DIR}/taskflow -tc=Composition-2)
-add_test(composition-3    ${TF_UTEST_DIR}/taskflow -tc=Composition-3)
-add_test(observer         ${TF_UTEST_DIR}/taskflow -tc=Observer)
+target_include_directories(utility PRIVATE ${TF_3RD_PARTY_DIR}/doctest)
+set(TF_UTEST_UTILITY ${TF_UTEST_DIR}/utility)
+add_test(passive_vector  ${TF_UTEST_UTILITY} -tc=PassiveVector)
+add_test(function_traits ${TF_UTEST_UTILITY} -tc=FunctionTraits)
+add_test(object_pool.sequential ${TF_UTEST_UTILITY} -tc=ObjectPool.Sequential)
+add_test(object_pool.1thread ${TF_UTEST_UTILITY} -tc=ObjectPool.1thread)
+add_test(object_pool.2threads ${TF_UTEST_UTILITY} -tc=ObjectPool.2threads)
+add_test(object_pool.3threads ${TF_UTEST_UTILITY} -tc=ObjectPool.3threads)
+add_test(object_pool.4threads ${TF_UTEST_UTILITY} -tc=ObjectPool.4threads)
+add_test(object_pool.5threads ${TF_UTEST_UTILITY} -tc=ObjectPool.5threads)
+add_test(object_pool.6threads ${TF_UTEST_UTILITY} -tc=ObjectPool.6threads)
+add_test(object_pool.7threads ${TF_UTEST_UTILITY} -tc=ObjectPool.7threads)
+add_test(object_pool.8threads ${TF_UTEST_UTILITY} -tc=ObjectPool.8threads)
+add_test(object_pool.9threads ${TF_UTEST_UTILITY} -tc=ObjectPool.9threads)
+add_test(object_pool.10threads ${TF_UTEST_UTILITY} -tc=ObjectPool.10threads)
+add_test(object_pool.11threads ${TF_UTEST_UTILITY} -tc=ObjectPool.11threads)
+add_test(object_pool.12threads ${TF_UTEST_UTILITY} -tc=ObjectPool.12threads)
+add_test(object_pool.13threads ${TF_UTEST_UTILITY} -tc=ObjectPool.13threads)
+add_test(object_pool.14threads ${TF_UTEST_UTILITY} -tc=ObjectPool.14threads)
+add_test(object_pool.15threads ${TF_UTEST_UTILITY} -tc=ObjectPool.15threads)
+add_test(object_pool.16threads ${TF_UTEST_UTILITY} -tc=ObjectPool.16threads)
 
 # unittest for WorkStealingQueue 
-add_executable(spmc_queue unittest/spmc_queue.cpp)
-target_link_libraries(spmc_queue ${PROJECT_NAME} Threads::Threads)
-target_include_directories(spmc_queue PRIVATE ${PROJECT_SOURCE_DIR}/doctest tf::default_settings)
-add_test(WorkStealingQueue.Owner  ${TF_UTEST_DIR}/spmc_queue -tc=WSQ.Owner)
-add_test(WorkStealingQueue.1Thief ${TF_UTEST_DIR}/spmc_queue -tc=WSQ.1Thief)
-add_test(WorkStealingQueue.2Thieves ${TF_UTEST_DIR}/spmc_queue -tc=WSQ.2Thieves)
-add_test(WorkStealingQueue.3Thieves ${TF_UTEST_DIR}/spmc_queue -tc=WSQ.3Thieves)
-add_test(WorkStealingQueue.4Thieves ${TF_UTEST_DIR}/spmc_queue -tc=WSQ.4Thieves)
+add_executable(tsq ${TF_UTEST_DIR}/tsq.cpp)
+target_link_libraries(tsq ${PROJECT_NAME} Threads::Threads)
+target_include_directories(tsq PRIVATE ${TF_3RD_PARTY_DIR}/doctest tf::default_settings)
+set(TF_UTEST_TSQ ${TF_UTEST_DIR}/tsq)
+add_test(tsq.Owner  ${TF_UTEST_TSQ} -tc=TSQ.Owner)
+add_test(tsq.1Thief ${TF_UTEST_TSQ} -tc=TSQ.1Thief)
+add_test(tsq.2Thieves ${TF_UTEST_TSQ} -tc=TSQ.2Thieves)
+add_test(tsq.3Thieves ${TF_UTEST_TSQ} -tc=TSQ.3Thieves)
+add_test(tsq.4Thieves ${TF_UTEST_TSQ} -tc=TSQ.4Thieves)
+add_test(tsq.5Thieves ${TF_UTEST_TSQ} -tc=TSQ.5Thieves)
+add_test(tsq.6Thieves ${TF_UTEST_TSQ} -tc=TSQ.6Thieves)
+add_test(tsq.7Thieves ${TF_UTEST_TSQ} -tc=TSQ.7Thieves)
+add_test(tsq.8Thieves ${TF_UTEST_TSQ} -tc=TSQ.8Thieves)
 
-endif()
+# unittest for basics
+add_executable(basics ${TF_UTEST_DIR}/basics.cpp)
+target_link_libraries(basics ${PROJECT_NAME} Threads::Threads tf::default_settings)
+target_include_directories(basics PRIVATE ${TF_3RD_PARTY_DIR}/doctest)
+set(TF_UTEST_BASICS ${TF_UTEST_DIR}/basics)
+add_test(builder ${TF_UTEST_BASICS} -tc=Builder)
+add_test(creation ${TF_UTEST_BASICS} -tc=Creation)
+add_test(iterators ${TF_UTEST_BASICS} -tc=Iterators)       
+add_test(std_function ${TF_UTEST_BASICS} -tc=STDFunction)       
+add_test(hash ${TF_UTEST_BASICS} -tc=Hash)
+add_test(worker_id.1thread ${TF_UTEST_BASICS} -tc=WorkerID.1thread)
+add_test(worker_id.2threads ${TF_UTEST_BASICS} -tc=WorkerID.2threads)
+add_test(worker_id.3threads ${TF_UTEST_BASICS} -tc=WorkerID.3threads)
+add_test(worker_id.4threads ${TF_UTEST_BASICS} -tc=WorkerID.4threads)
+add_test(worker_id.5threads ${TF_UTEST_BASICS} -tc=WorkerID.5threads)
+add_test(worker_id.6threads ${TF_UTEST_BASICS} -tc=WorkerID.6threads)
+add_test(worker_id.7threads ${TF_UTEST_BASICS} -tc=WorkerID.7threads)
+add_test(worker_id.8threads ${TF_UTEST_BASICS} -tc=WorkerID.8threads)
+add_test(serial_runs.1thread ${TF_UTEST_BASICS} -tc=SerialRuns.1thread)
+add_test(serial_runs.2threads ${TF_UTEST_BASICS} -tc=SerialRuns.2threads)
+add_test(serial_runs.3threads ${TF_UTEST_BASICS} -tc=SerialRuns.3threads)
+add_test(serial_runs.4threads ${TF_UTEST_BASICS} -tc=SerialRuns.4threads)
+add_test(serial_runs.5threads ${TF_UTEST_BASICS} -tc=SerialRuns.5threads)
+add_test(serial_runs.6threads ${TF_UTEST_BASICS} -tc=SerialRuns.6threads)
+add_test(serial_runs.7threads ${TF_UTEST_BASICS} -tc=SerialRuns.7threads)
+add_test(serial_runs.8threads ${TF_UTEST_BASICS} -tc=SerialRuns.8threads)
+add_test(parallel_runs.1thread  ${TF_UTEST_BASICS} -tc=ParallelRuns.1thread)
+add_test(parallel_runs.2threads ${TF_UTEST_BASICS} -tc=ParallelRuns.2threads)
+add_test(parallel_runs.3threads ${TF_UTEST_BASICS} -tc=ParallelRuns.3threads)
+add_test(parallel_runs.4threads ${TF_UTEST_BASICS} -tc=ParallelRuns.4threads)
+add_test(parallel_runs.5threads ${TF_UTEST_BASICS} -tc=ParallelRuns.5threads)
+add_test(parallel_runs.6threads ${TF_UTEST_BASICS} -tc=ParallelRuns.6threads)
+add_test(parallel_runs.7threads ${TF_UTEST_BASICS} -tc=ParallelRuns.7threads)
+add_test(parallel_runs.8threads ${TF_UTEST_BASICS} -tc=ParallelRuns.8threads)
+add_test(nested_runs.1thread  ${TF_UTEST_BASICS} -tc=NestedRuns.1thread)
+add_test(nested_runs.2threads ${TF_UTEST_BASICS} -tc=NestedRuns.2threads)
+add_test(nested_runs.3threads ${TF_UTEST_BASICS} -tc=NestedRuns.3threads)
+add_test(nested_runs.4threads ${TF_UTEST_BASICS} -tc=NestedRuns.4threads)
+add_test(nested_runs.8threads ${TF_UTEST_BASICS} -tc=NestedRuns.8threads)
+add_test(nested_runs.16threads ${TF_UTEST_BASICS} -tc=NestedRuns.16threads)
+add_test(parallel_for.1thread ${TF_UTEST_BASICS} -tc=ParallelFor.1thread)
+add_test(parallel_for.2threads ${TF_UTEST_BASICS} -tc=ParallelFor.2threads)
+add_test(parallel_for.3threads ${TF_UTEST_BASICS} -tc=ParallelFor.3threads)
+add_test(parallel_for.4threads ${TF_UTEST_BASICS} -tc=ParallelFor.4threads)
+add_test(parallel_for.5threads ${TF_UTEST_BASICS} -tc=ParallelFor.5threads)
+add_test(parallel_for.6threads ${TF_UTEST_BASICS} -tc=ParallelFor.6threads)
+add_test(parallel_for.7threads ${TF_UTEST_BASICS} -tc=ParallelFor.7threads)
+add_test(parallel_for.8threads ${TF_UTEST_BASICS} -tc=ParallelFor.8threads)
+add_test(parallel_for_idx.1thread ${TF_UTEST_BASICS} -tc=ParallelForIndex.1thread)
+add_test(parallel_for_idx.2threads ${TF_UTEST_BASICS} -tc=ParallelForIndex.2threads)
+add_test(parallel_for_idx.3threads ${TF_UTEST_BASICS} -tc=ParallelForIndex.3threads)
+add_test(parallel_for_idx.4threads ${TF_UTEST_BASICS} -tc=ParallelForIndex.4threads)
+add_test(parallel_for_idx.5threads ${TF_UTEST_BASICS} -tc=ParallelForIndex.5threads)
+add_test(parallel_for_idx.6threads ${TF_UTEST_BASICS} -tc=ParallelForIndex.6threads)
+add_test(parallel_for_idx.7threads ${TF_UTEST_BASICS} -tc=ParallelForIndex.7threads)
+add_test(parallel_for_idx.8threads ${TF_UTEST_BASICS} -tc=ParallelForIndex.8threads)
+add_test(reduce           ${TF_UTEST_BASICS} -tc=Reduce)
+add_test(reduce_min       ${TF_UTEST_BASICS} -tc=ReduceMin)
+add_test(reduce_max       ${TF_UTEST_BASICS} -tc=ReduceMax)
+add_test(joined_subflow.1thread ${TF_UTEST_BASICS} -tc=JoinedSubflow.1thread)
+add_test(joined_subflow.2threads ${TF_UTEST_BASICS} -tc=JoinedSubflow.2threads)
+add_test(joined_subflow.3threads ${TF_UTEST_BASICS} -tc=JoinedSubflow.3threads)
+add_test(joined_subflow.4threads ${TF_UTEST_BASICS} -tc=JoinedSubflow.4threads)
+add_test(joined_subflow.5threads ${TF_UTEST_BASICS} -tc=JoinedSubflow.5threads)
+add_test(joined_subflow.6threads ${TF_UTEST_BASICS} -tc=JoinedSubflow.6threads)
+add_test(joined_subflow.7threads ${TF_UTEST_BASICS} -tc=JoinedSubflow.7threads)
+add_test(joined_subflow.8threads ${TF_UTEST_BASICS} -tc=JoinedSubflow.8threads)
+add_test(detached_subflow.1thread ${TF_UTEST_BASICS} -tc=DetachedSubflow.1thread)
+add_test(detached_subflow.2threads ${TF_UTEST_BASICS} -tc=DetachedSubflow.2threads)
+add_test(detached_subflow.3threads ${TF_UTEST_BASICS} -tc=DetachedSubflow.3threads)
+add_test(detached_subflow.4threads ${TF_UTEST_BASICS} -tc=DetachedSubflow.4threads)
+add_test(detached_subflow.5threads ${TF_UTEST_BASICS} -tc=DetachedSubflow.5threads)
+add_test(detached_subflow.6threads ${TF_UTEST_BASICS} -tc=DetachedSubflow.6threads)
+add_test(detached_subflow.7threads ${TF_UTEST_BASICS} -tc=DetachedSubflow.7threads)
+add_test(detached_subflow.8threads ${TF_UTEST_BASICS} -tc=DetachedSubflow.8threads)
+add_test(tree_subflow     ${TF_UTEST_BASICS} -tc=TreeSubflow)
+add_test(composition-1    ${TF_UTEST_BASICS} -tc=Composition-1)
+add_test(composition-2    ${TF_UTEST_BASICS} -tc=Composition-2)
+add_test(composition-3    ${TF_UTEST_BASICS} -tc=Composition-3)
+add_test(observer.1thread  ${TF_UTEST_BASICS} -tc=Observer.1thread)
+add_test(observer.2threads ${TF_UTEST_BASICS} -tc=Observer.2threads)
+add_test(observer.3threads ${TF_UTEST_BASICS} -tc=Observer.3threads)
+add_test(observer.4threads ${TF_UTEST_BASICS} -tc=Observer.4threads)
+add_test(loop_cond.1thread  ${TF_UTEST_BASICS} -tc=LoopCond.1thread)
+add_test(loop_cond.2threads ${TF_UTEST_BASICS} -tc=LoopCond.2threads)
+add_test(loop_cond.3threads ${TF_UTEST_BASICS} -tc=LoopCond.3threads)
+add_test(loop_cond.4threads ${TF_UTEST_BASICS} -tc=LoopCond.4threads)
+add_test(flip_coin_cond.1thread  ${TF_UTEST_BASICS} -tc=FlipCoinCond.1thread)
+add_test(flip_coin_cond.2threads ${TF_UTEST_BASICS} -tc=FlipCoinCond.2threads)
+add_test(flip_coin_cond.3threads ${TF_UTEST_BASICS} -tc=FlipCoinCond.3threads)
+add_test(flip_coin_cond.4threads ${TF_UTEST_BASICS} -tc=FlipCoinCond.4threads)
+add_test(cyclic_cond.1thread  ${TF_UTEST_BASICS} -tc=CyclicCond.1thread)
+add_test(cyclic_cond.2threads ${TF_UTEST_BASICS} -tc=CyclicCond.2threads)
+add_test(cyclic_cond.3threads ${TF_UTEST_BASICS} -tc=CyclicCond.3threads)
+add_test(cyclic_cond.4threads ${TF_UTEST_BASICS} -tc=CyclicCond.4threads)
+add_test(cyclic_cond.5threads ${TF_UTEST_BASICS} -tc=CyclicCond.5threads)
+add_test(cyclic_cond.6threads ${TF_UTEST_BASICS} -tc=CyclicCond.6threads)
+add_test(cyclic_cond.7threads ${TF_UTEST_BASICS} -tc=CyclicCond.7threads)
+add_test(cyclic_cond.8threads ${TF_UTEST_BASICS} -tc=CyclicCond.8threads)
+add_test(btree_cond ${TF_UTEST_BASICS} -tc=BTreeCondition)
+add_test(dynamic_btree_cond   ${TF_UTEST_BASICS} -tc=DynamicBTreeCondition)
+add_test(nested_cond.1thread  ${TF_UTEST_BASICS} -tc=NestedCond.1thread)
+add_test(nested_cond.2threads ${TF_UTEST_BASICS} -tc=NestedCond.2threads)
+add_test(nested_cond.3threads ${TF_UTEST_BASICS} -tc=NestedCond.3threads)
+add_test(nested_cond.4threads ${TF_UTEST_BASICS} -tc=NestedCond.4threads)
+add_test(nested_cond.5threads ${TF_UTEST_BASICS} -tc=NestedCond.5threads)
+add_test(nested_cond.6threads ${TF_UTEST_BASICS} -tc=NestedCond.6threads)
+add_test(nested_cond.7threads ${TF_UTEST_BASICS} -tc=NestedCond.7threads)
+add_test(nested_cond.8threads ${TF_UTEST_BASICS} -tc=NestedCond.8threads)
+add_test(cond2cond.1thread  ${TF_UTEST_BASICS} -tc=Cond2Cond.1thread)
+add_test(cond2cond.2threads ${TF_UTEST_BASICS} -tc=Cond2Cond.2threads)
+add_test(cond2cond.3threads ${TF_UTEST_BASICS} -tc=Cond2Cond.3threads)
+add_test(cond2cond.4threads ${TF_UTEST_BASICS} -tc=Cond2Cond.4threads)
+add_test(cond2cond.5threads ${TF_UTEST_BASICS} -tc=Cond2Cond.5threads)
+add_test(cond2cond.6threads ${TF_UTEST_BASICS} -tc=Cond2Cond.6threads)
+add_test(cond2cond.7threads ${TF_UTEST_BASICS} -tc=Cond2Cond.7threads)
+add_test(cond2cond.8threads ${TF_UTEST_BASICS} -tc=Cond2Cond.8threads)
+add_test(hier_cond.1thread  ${TF_UTEST_BASICS} -tc=HierCondition.1thread)
+add_test(hier_cond.2threads ${TF_UTEST_BASICS} -tc=HierCondition.2threads)
+add_test(hier_cond.3threads ${TF_UTEST_BASICS} -tc=HierCondition.3threads)
+add_test(hier_cond.4threads ${TF_UTEST_BASICS} -tc=HierCondition.4threads)
+add_test(hier_cond.5threads ${TF_UTEST_BASICS} -tc=HierCondition.5threads)
+add_test(hier_cond.6threads ${TF_UTEST_BASICS} -tc=HierCondition.6threads)
+add_test(hier_cond.7threads ${TF_UTEST_BASICS} -tc=HierCondition.7threads)
+add_test(hier_cond.8threads ${TF_UTEST_BASICS} -tc=HierCondition.8threads)
+
+# unittest for traverse
+add_executable(traverse ${TF_UTEST_DIR}/traverse.cpp)
+target_link_libraries(traverse ${PROJECT_NAME} Threads::Threads tf::default_settings)
+target_include_directories(traverse PRIVATE ${TF_3RD_PARTY_DIR}/doctest)
+set(TF_UTEST_TRAVERSE ${TF_UTEST_DIR}/traverse)
+add_test(static_traverse  ${TF_UTEST_TRAVERSE} -tc=StaticTraverse)
+add_test(dynamic_traverse ${TF_UTEST_TRAVERSE} -tc=DynamicTraverse)
+add_test(parallel_traverse.1thread ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.1)
+add_test(parallel_traverse.2threads ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.2)
+add_test(parallel_traverse.3threads ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.3)
+add_test(parallel_traverse.4threads ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.4)
+add_test(parallel_traverse.5threads ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.5)
+add_test(parallel_traverse.6threads ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.6)
+add_test(parallel_traverse.7threads ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.7)
+add_test(parallel_traverse.8threads ${TF_UTEST_TRAVERSE} -tc=ParallelTraverse.8)
+
+# unittest for sorting
+add_executable(sort ${TF_UTEST_DIR}/sort.cpp)
+target_link_libraries(sort ${PROJECT_NAME} Threads::Threads tf::default_settings)
+target_include_directories(sort PRIVATE ${TF_3RD_PARTY_DIR}/doctest)
+set(TF_UTEST_SORT ${TF_UTEST_DIR}/sort)
+add_test(bubble_sort ${TF_UTEST_SORT} -tc=BubbleSort)
+add_test(selection_sort ${TF_UTEST_SORT} -tc=SelectionSort)
+add_test(merge_sort ${TF_UTEST_SORT} -tc=MergeSort)
+add_test(quick_sort ${TF_UTEST_SORT} -tc=QuickSort)
+
+
+#### CUDA unittests
+if(${TF_ENABLE_CUDA})
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_UTEST_DIR}/cuda)
+
+add_executable(cuda_basics ${TF_UTEST_DIR}/cuda/cuda_basics.cu)
+target_link_libraries(
+  cuda_basics ${PROJECT_NAME} Threads::Threads tf::default_settings
+)
+target_include_directories(cuda_basics PRIVATE ${TF_3RD_PARTY_DIR}/doctest)
+set(TF_UTEST_CUDA_BASICS ${TF_UTEST_DIR}/cuda/cuda_basics)
+add_test(cuda_basics.builder ${TF_UTEST_CUDA_BASICS} -tc=Builder)
+add_test(cuda_basics.worker_id.1C.1G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.1C.1G)
+add_test(cuda_basics.worker_id.1C.2G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.1C.2G)
+add_test(cuda_basics.worker_id.1C.3G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.1C.3G)
+add_test(cuda_basics.worker_id.1C.4G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.1C.4G)
+add_test(cuda_basics.worker_id.2C.1G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.2C.1G)
+add_test(cuda_basics.worker_id.2C.2G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.2C.2G)
+add_test(cuda_basics.worker_id.2C.3G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.2C.3G)
+add_test(cuda_basics.worker_id.2C.4G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.2C.4G)
+add_test(cuda_basics.worker_id.3C.1G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.3C.1G)
+add_test(cuda_basics.worker_id.3C.2G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.3C.2G)
+add_test(cuda_basics.worker_id.3C.3G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.3C.3G)
+add_test(cuda_basics.worker_id.3C.4G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.3C.4G)
+add_test(cuda_basics.worker_id.4C.1G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.4C.1G)
+add_test(cuda_basics.worker_id.4C.2G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.4C.2G)
+add_test(cuda_basics.worker_id.4C.3G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.4C.3G)
+add_test(cuda_basics.worker_id.4C.4G ${TF_UTEST_CUDA_BASICS} -tc=WorkerID.4C.4G)
+add_test(cuda_basics.set.i8  ${TF_UTEST_CUDA_BASICS} -tc=Set.i8)
+add_test(cuda_basics.set.i16 ${TF_UTEST_CUDA_BASICS} -tc=Set.i16)
+add_test(cuda_basics.set.i32 ${TF_UTEST_CUDA_BASICS} -tc=Set.i32)
+add_test(cuda_basics.bset.i8  ${TF_UTEST_CUDA_BASICS} -tc=BSet.i8)
+add_test(cuda_basics.bset.i16 ${TF_UTEST_CUDA_BASICS} -tc=BSet.i16)
+add_test(cuda_basics.bset.i32 ${TF_UTEST_CUDA_BASICS} -tc=BSet.i32)
+add_test(cuda_basics.add.i8  ${TF_UTEST_CUDA_BASICS} -tc=Add.i8)
+add_test(cuda_basics.add.i16 ${TF_UTEST_CUDA_BASICS} -tc=Add.i16)
+add_test(cuda_basics.add.i32 ${TF_UTEST_CUDA_BASICS} -tc=Add.i32)
+add_test(cuda_basics.barrier.i8 ${TF_UTEST_CUDA_BASICS} -tc=Barrier.i8)
+add_test(cuda_basics.barrier.i16 ${TF_UTEST_CUDA_BASICS} -tc=Barrier.i16)
+add_test(cuda_basics.barrier.i32 ${TF_UTEST_CUDA_BASICS} -tc=Barrier.i32)
+add_test(cuda_basics.memset ${TF_UTEST_CUDA_BASICS} -tc=Memset)
+add_test(cuda_basics.memset0.i8 ${TF_UTEST_CUDA_BASICS} -tc=Memset0.i8)
+add_test(cuda_basics.memset0.i16 ${TF_UTEST_CUDA_BASICS} -tc=Memset0.i16)
+add_test(cuda_basics.memset0.i32 ${TF_UTEST_CUDA_BASICS} -tc=Memset0.i32)
+add_test(cuda_basics.memset0.f32 ${TF_UTEST_CUDA_BASICS} -tc=Memset0.f32)
+add_test(cuda_basics.memset0.f64 ${TF_UTEST_CUDA_BASICS} -tc=Memset0.f64)
+add_test(cuda_basics.zero.i8 ${TF_UTEST_CUDA_BASICS} -tc=Zero.i8)
+add_test(cuda_basics.zero.i16 ${TF_UTEST_CUDA_BASICS} -tc=Zero.i16)
+add_test(cuda_basics.zero.i32 ${TF_UTEST_CUDA_BASICS} -tc=Zero.i32)
+add_test(cuda_basics.zero.f32 ${TF_UTEST_CUDA_BASICS} -tc=Zero.f32)
+add_test(cuda_basics.fill.i8 ${TF_UTEST_CUDA_BASICS} -tc=Fill.i8)
+add_test(cuda_basics.fill.i16 ${TF_UTEST_CUDA_BASICS} -tc=Fill.i16)
+add_test(cuda_basics.fill.i32 ${TF_UTEST_CUDA_BASICS} -tc=Fill.i32)
+add_test(cuda_basics.fill.f32 ${TF_UTEST_CUDA_BASICS} -tc=Fill.f32)
+add_test(cuda_basics.memcpy.i8 ${TF_UTEST_CUDA_BASICS} -tc=Memcpy.i8)
+add_test(cuda_basics.memcpy.i16 ${TF_UTEST_CUDA_BASICS} -tc=Memcpy.i16)
+add_test(cuda_basics.memcpy.i32 ${TF_UTEST_CUDA_BASICS} -tc=Memcpy.i32)
+add_test(cuda_basics.memcpy.f32 ${TF_UTEST_CUDA_BASICS} -tc=Memcpy.f32)
+add_test(cuda_basics.memcpy.f64 ${TF_UTEST_CUDA_BASICS} -tc=Memcpy.f64)
+add_test(cuda_basics.empty ${TF_UTEST_CUDA_BASICS} -tc=Empty)
+add_test(cuda_basics.nested_runs ${TF_UTEST_CUDA_BASICS} -tc=NestedRuns)
+add_test(cuda_basics.multiruns.1C.1G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.1C.1G)
+add_test(cuda_basics.multiruns.1C.2G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.1C.2G)
+add_test(cuda_basics.multiruns.1C.3G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.1C.3G)
+add_test(cuda_basics.multiruns.1C.4G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.1C.4G)
+add_test(cuda_basics.multiruns.2C.1G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.2C.1G)
+add_test(cuda_basics.multiruns.2C.2G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.2C.2G)
+add_test(cuda_basics.multiruns.2C.3G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.2C.3G)
+add_test(cuda_basics.multiruns.2C.4G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.2C.4G)
+add_test(cuda_basics.multiruns.3C.1G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.3C.1G)
+add_test(cuda_basics.multiruns.3C.2G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.3C.2G)
+add_test(cuda_basics.multiruns.3C.3G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.3C.3G)
+add_test(cuda_basics.multiruns.3C.4G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.3C.4G)
+add_test(cuda_basics.multiruns.4C.1G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.4C.1G)
+add_test(cuda_basics.multiruns.4C.2G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.4C.2G)
+add_test(cuda_basics.multiruns.4C.3G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.4C.3G)
+add_test(cuda_basics.multiruns.4C.4G ${TF_UTEST_CUDA_BASICS} -tc=Multiruns.4C.4G)
+add_test(cuda_basics.subflow ${TF_UTEST_CUDA_BASICS} -tc=Subflow)
+add_test(cuda_basics.nested_subflow ${TF_UTEST_CUDA_BASICS} -tc=NestedSubflow)
+add_test(cuda_basics.detached_subflow ${TF_UTEST_CUDA_BASICS} -tc=DetachedSubflow)
+add_test(cuda_basics.loop ${TF_UTEST_CUDA_BASICS} -tc=Loop)
+
+
+# matrix operation tests
+add_executable(cuda_matrix ${TF_UTEST_DIR}/cuda/cuda_matrix.cu)
+target_link_libraries(
+  cuda_matrix ${PROJECT_NAME} Threads::Threads tf::default_settings
+)
+target_include_directories(cuda_matrix PRIVATE ${TF_3RD_PARTY_DIR}/doctest)
+set(TF_UTEST_CUDA_MATRIX ${TF_UTEST_DIR}/cuda/cuda_matrix)
+add_test(cuda_matrix.multiply ${TF_UTEST_CUDA_MATRIX} -tc=multiply)
+add_test(cuda_matrix.transpose ${TF_UTEST_CUDA_MATRIX} -tc=transpose)
+add_test(cuda_matrix.product ${TF_UTEST_CUDA_MATRIX} -tc=product)
+
+endif(${TF_ENABLE_CUDA})
 
 # -----------------------------------------------------------------------------
 # Benchmarking (enabled by TF_BUILD_BENCHMARKS)
@@ -319,6 +619,7 @@ message(STATUS "TBB_ROOT: " ${TBB_ROOT})
 include(${TBB_ROOT}/cmake/TBBBuild.cmake)
 tbb_build(TBB_ROOT ${TBB_ROOT} CONFIG_DIR TBB_DIR MAKE_ARGS tbb_cpf=1)
 find_package(TBB REQUIRED tbb_preview)
+
 
 ## benchmark 1: wavefront computing
 message(STATUS "benchmark 1: wavefront")
@@ -429,31 +730,8 @@ target_link_libraries(
 )
 set_target_properties(mnist PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
 
-## benchmark 6: Parallel DNN
-message(STATUS "benchmark 6: Parallel DNN")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_BENCHMARK_DIR}/parallel_dnn)
-add_executable(
-  parallel_dnn 
-  ${TF_BENCHMARK_DIR}/parallel_dnn/main.cpp
-  ${TF_BENCHMARK_DIR}/parallel_dnn/omp.cpp
-  ${TF_BENCHMARK_DIR}/parallel_dnn/tbb.cpp
-  ${TF_BENCHMARK_DIR}/parallel_dnn/seq.cpp
-  ${TF_BENCHMARK_DIR}/parallel_dnn/taskflow.cpp
-)
-target_include_directories(parallel_dnn PRIVATE ${PROJECT_SOURCE_DIR}/3rd-party/CLI11)
-target_link_libraries(
-  parallel_dnn 
-  ${PROJECT_NAME} 
-  Threads::Threads 
-  ${TBB_IMPORTED_TARGETS}
-  ${OpenMP_CXX_LIBRARIES} 
-  stdc++fs 
-  tf::default_settings
-)
-set_target_properties(parallel_dnn PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
-
-## benchmark 7: matrix multiplication
-message(STATUS "benchmark 7: matrix multiplication")
+## benchmark 6: matrix multiplication
+message(STATUS "benchmark 6: matrix multiplication")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_BENCHMARK_DIR}/matrix_multiplication)
 add_executable(
   matrix_multiplication 
@@ -473,68 +751,29 @@ target_link_libraries(
 )
 set_target_properties(matrix_multiplication PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
 
-## benchmark 8: Mandelbrot set
-message(STATUS "benchmark 8: Mandelbrot set")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_BENCHMARK_DIR}/mandelbrot_set)
-add_executable(
-  mandelbrot_set
-  ${TF_BENCHMARK_DIR}/mandelbrot_set/main.cpp
-  ${TF_BENCHMARK_DIR}/mandelbrot_set/omp.cpp
-  ${TF_BENCHMARK_DIR}/mandelbrot_set/tbb.cpp
-  ${TF_BENCHMARK_DIR}/mandelbrot_set/taskflow.cpp
-)
-target_include_directories(mandelbrot_set PRIVATE ${PROJECT_SOURCE_DIR}/3rd-party/CLI11)
-target_link_libraries(
-  mandelbrot_set
-  ${PROJECT_NAME} 
-  Threads::Threads 
-  ${TBB_IMPORTED_TARGETS} 
-  ${OpenMP_CXX_LIBRARIES} 
-  tf::default_settings
-)
-set_target_properties(mandelbrot_set PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
 
-## benchmark 9: Black–Scholes
-message(STATUS "benchmark 9: Black-Scholes Partial Differential Equation")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_BENCHMARK_DIR}/black_scholes)
+if(${TF_ENABLE_CUDA})
+## cuda benchmark 1: heterogeneous traversal
+message(STATUS "cuda benchmark 1: heterogeneous traversal")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_BENCHMARK_DIR}/hetero_traversal)
 add_executable(
-  black_scholes
-  ${TF_BENCHMARK_DIR}/black_scholes/main.cpp
-  ${TF_BENCHMARK_DIR}/black_scholes/omp.cpp
-  ${TF_BENCHMARK_DIR}/black_scholes/tbb.cpp
-  ${TF_BENCHMARK_DIR}/black_scholes/taskflow.cpp
+  hetero_traversal 
+  ${TF_BENCHMARK_DIR}/hetero_traversal/main.cu
+  ${TF_BENCHMARK_DIR}/hetero_traversal/taskflow.cu
+  ${TF_BENCHMARK_DIR}/hetero_traversal/tbb.cu
+  ${TF_BENCHMARK_DIR}/hetero_traversal/omp.cu
 )
-target_include_directories(black_scholes PRIVATE ${PROJECT_SOURCE_DIR}/3rd-party/CLI11)
+target_include_directories(hetero_traversal PRIVATE ${PROJECT_SOURCE_DIR}/3rd-party/CLI11)
 target_link_libraries(
-  black_scholes
+  hetero_traversal 
   ${PROJECT_NAME} 
   Threads::Threads 
   ${TBB_IMPORTED_TARGETS} 
   ${OpenMP_CXX_LIBRARIES} 
   tf::default_settings
 )
-set_target_properties(black_scholes PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
-
-## benchmark 10: Strassen algorithm
-message(STATUS "benchmark 10: Strassen matrix multiplication algorithm")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TF_BENCHMARK_DIR}/strassen)
-add_executable(
-  strassen
-  ${TF_BENCHMARK_DIR}/strassen/main.cpp
-  ${TF_BENCHMARK_DIR}/strassen/omp.cpp
-  ${TF_BENCHMARK_DIR}/strassen/tbb.cpp
-  ${TF_BENCHMARK_DIR}/strassen/taskflow.cpp
-)
-target_include_directories(strassen PRIVATE ${PROJECT_SOURCE_DIR}/3rd-party/CLI11)
-target_link_libraries(
-  strassen
-  ${PROJECT_NAME} 
-  Threads::Threads 
-  ${TBB_IMPORTED_TARGETS} 
-  ${OpenMP_CXX_LIBRARIES} 
-  tf::default_settings
-)
-set_target_properties(strassen PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
+set_target_properties(hetero_traversal PROPERTIES COMPILE_FLAGS "-Xcompiler ${OpenMP_CXX_FLAGS}")
+endif(${TF_ENABLE_CUDA})
 
 endif()
 
