@@ -960,8 +960,8 @@ void parallel_for(unsigned W) {
     tf::Executor executor(w);
     tf::Taskflow tf;
     std::vector<int> vec(num_data, 0);
-    tf.parallel_for(
-      vec.begin(), vec.end(), [] (int& v) { v = 64; }, group ? ::rand() : 0
+    tf.parallel_for_static(
+      vec.begin(), vec.end(), [] (int& v) { v = 64; }, group ? ::rand()%17 : 0
     );
     for(const auto v : vec) {
       REQUIRE(v == 0);
@@ -978,7 +978,7 @@ void parallel_for(unsigned W) {
     tf::Taskflow tf;
     std::vector<int> vec(num_data, 0);
     std::atomic<int> sum(0);
-    tf.parallel_for(vec.begin(), vec.end(), [&](auto) { ++sum; }, group ? ::rand() : 0);
+    tf.parallel_for_static(vec.begin(), vec.end(), [&](auto) { ++sum; }, group ? ::rand()%17 : 0);
     REQUIRE(sum == 0);
     executor.run(tf);
     executor.wait_for_all();
@@ -1041,39 +1041,39 @@ void parallel_for_index(unsigned w) {
   
   using namespace std::chrono_literals;
 
-  auto exception_test = [] () {
+  //auto exception_test = [] () {
 
-    tf::Taskflow tf;
+  //  tf::Taskflow tf;
 
-    // invalid index
-    REQUIRE_THROWS(tf.parallel_for(0, 10, 0, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0, 10, -1, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10, 0, 0, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10, 0, 1, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0u, 10u, 0u, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10u, 0u, 0u, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10u, 0u, 1u, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0.0f, 10.0f, 0.0f, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0.0f, 10.0f, -1.0f, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10.0f, 0.0f, 0.0f, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10.0f, 0.0f, 1.0f, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0.0, 10.0, 0.0, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0.0, 10.0, -1.0, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10.0, 0.0, 0.0, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(10.0, 0.0, 1.0, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0, 0, 0, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0u, 0u, 0u, [] (auto) {}));
-    REQUIRE_THROWS(tf.parallel_for(0.0, 0.0, 0.0, [] (auto) {}));
-    
-    // graceful case
-    REQUIRE_NOTHROW(tf.parallel_for(0, 0, -1, [] (auto) {}));
-    REQUIRE_NOTHROW(tf.parallel_for(0, 0, 1, [] (auto) {}));
-    REQUIRE_NOTHROW(tf.parallel_for(0u, 0u, 1u, [] (auto) {}));
-    REQUIRE_NOTHROW(tf.parallel_for(0.0f, 0.0f, -1.0f, [] (auto) {}));
-    REQUIRE_NOTHROW(tf.parallel_for(0.0f, 0.0f, 1.0f, [] (auto) {}));
-    REQUIRE_NOTHROW(tf.parallel_for(0.0, 0.0, -1.0, [] (auto) {}));
-    REQUIRE_NOTHROW(tf.parallel_for(0.0, 0.0, 1.0, [] (auto) {}));
-  };
+  //  // invalid index
+  //  REQUIRE_THROWS(tf.parallel_for(0, 10, 0, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0, 10, -1, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10, 0, 0, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10, 0, 1, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0u, 10u, 0u, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10u, 0u, 0u, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10u, 0u, 1u, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0.0f, 10.0f, 0.0f, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0.0f, 10.0f, -1.0f, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10.0f, 0.0f, 0.0f, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10.0f, 0.0f, 1.0f, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0.0, 10.0, 0.0, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0.0, 10.0, -1.0, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10.0, 0.0, 0.0, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(10.0, 0.0, 1.0, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0, 0, 0, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0u, 0u, 0u, [] (auto) {}));
+  //  REQUIRE_THROWS(tf.parallel_for(0.0, 0.0, 0.0, [] (auto) {}));
+  //  
+  //  // graceful case
+  //  REQUIRE_NOTHROW(tf.parallel_for(0, 0, -1, [] (auto) {}));
+  //  REQUIRE_NOTHROW(tf.parallel_for(0, 0, 1, [] (auto) {}));
+  //  REQUIRE_NOTHROW(tf.parallel_for(0u, 0u, 1u, [] (auto) {}));
+  //  REQUIRE_NOTHROW(tf.parallel_for(0.0f, 0.0f, -1.0f, [] (auto) {}));
+  //  REQUIRE_NOTHROW(tf.parallel_for(0.0f, 0.0f, 1.0f, [] (auto) {}));
+  //  REQUIRE_NOTHROW(tf.parallel_for(0.0, 0.0, -1.0, [] (auto) {}));
+  //  REQUIRE_NOTHROW(tf.parallel_for(0.0, 0.0, 1.0, [] (auto) {}));
+  //};
 
   auto positive_integer_step = [] (unsigned w) {
     tf::Executor executor(w);
@@ -1084,14 +1084,16 @@ void parallel_for_index(unsigned w) {
           for(int b = beg; b<end; b+=s) {
             ++n;
           }
-          tf::Taskflow tf;
-          std::atomic<int> counter {0};
-          tf.parallel_for(beg, end, s, [&] (auto) {
-            counter.fetch_add(1, std::memory_order_relaxed);
-          });
-          executor.run(tf);
-          executor.wait_for_all();
-          REQUIRE(n == counter);
+          for(size_t c=0; c<10; c++) {
+            tf::Taskflow tf;
+            std::atomic<int> counter {0};
+            tf.parallel_for_static(beg, end, s, [&] (auto) {
+              counter.fetch_add(1, std::memory_order_relaxed);
+            }, c);
+            executor.run(tf);
+            executor.wait_for_all();
+            REQUIRE(n == counter);
+          }
         }
       }
     }
@@ -1106,81 +1108,83 @@ void parallel_for_index(unsigned w) {
           for(int b = beg; b>end; b-=s) {
             ++n;
           }
-          tf::Taskflow tf;
-          std::atomic<int> counter {0};
-          tf.parallel_for(beg, end, -s, [&] (auto) {
-            counter.fetch_add(1, std::memory_order_relaxed);
-          });
-          executor.run(tf);
-          executor.wait_for_all();
-          REQUIRE(n == counter);
+          for(size_t c=0; c<10; c++) {
+            tf::Taskflow tf;
+            std::atomic<int> counter {0};
+            tf.parallel_for_static(beg, end, -s, [&] (auto) {
+              counter.fetch_add(1, std::memory_order_relaxed);
+            }, c);
+            executor.run(tf);
+            executor.wait_for_all();
+            REQUIRE(n == counter);
+          }
         }
       }
     }
   };
   
-  auto positive_floating_step = [] (unsigned w) {
-    tf::Executor executor(w);
-    for(float beg=-10.0f; beg<=10.0f; ++beg) {
-      for(float end=beg; end<=10.0f; ++end) {
-        for(float s=1.0f; s<=end-beg; s+=0.1f) {
-          int n = 0;
-          if(beg < end) {
-            for(float b = beg; b < end; b += s) {
-              ++n;
-            }
-          }
-          else if(beg > end) {
-            for(float b = beg; b > end; b += s) {
-              ++n;
-            }
-          }
-          
-          tf::Taskflow tf;
-          std::atomic<int> counter {0};
-          tf.parallel_for(beg, end, s, [&] (auto) {
-            counter.fetch_add(1, std::memory_order_relaxed);
-          });
-          executor.run(tf);
-          executor.wait_for_all();
-          REQUIRE(n == counter);
-        }
-      }
-    }
-  };
+  //auto positive_floating_step = [] (unsigned w) {
+  //  tf::Executor executor(w);
+  //  for(float beg=-10.0f; beg<=10.0f; ++beg) {
+  //    for(float end=beg; end<=10.0f; ++end) {
+  //      for(float s=1.0f; s<=end-beg; s+=0.1f) {
+  //        int n = 0;
+  //        if(beg < end) {
+  //          for(float b = beg; b < end; b += s) {
+  //            ++n;
+  //          }
+  //        }
+  //        else if(beg > end) {
+  //          for(float b = beg; b > end; b += s) {
+  //            ++n;
+  //          }
+  //        }
+  //        
+  //        tf::Taskflow tf;
+  //        std::atomic<int> counter {0};
+  //        tf.parallel_for(beg, end, s, [&] (auto) {
+  //          counter.fetch_add(1, std::memory_order_relaxed);
+  //        });
+  //        executor.run(tf);
+  //        executor.wait_for_all();
+  //        REQUIRE(n == counter);
+  //      }
+  //    }
+  //  }
+  //};
+  //
+  //auto negative_floating_step = [] (unsigned w) {
+  //  tf::Executor executor(w);
+  //  for(float beg=10.0f; beg>=-10.0f; --beg) {
+  //    for(float end=beg; end>=-10.0f; --end) {
+  //      for(float s=1.0f; s<=beg-end; s+=0.1f) {
+  //        int n = 0;
+  //        if(beg < end) {
+  //          for(float b = beg; b < end; b += (-s)) {
+  //            ++n;
+  //          }
+  //        }
+  //        else if(beg > end) {
+  //          for(float b = beg; b > end; b += (-s)) {
+  //            ++n;
+  //          }
+  //        }
+  //        tf::Taskflow tf;
+  //        std::atomic<int> counter {0};
+  //        tf.parallel_for(beg, end, -s, [&] (auto) {
+  //          counter.fetch_add(1, std::memory_order_relaxed);
+  //        });
+  //        executor.run(tf);
+  //        executor.wait_for_all();
+  //        REQUIRE(n == counter);
+  //      }
+  //    }
+  //  }
+  //};
   
-  auto negative_floating_step = [] (unsigned w) {
-    tf::Executor executor(w);
-    for(float beg=10.0f; beg>=-10.0f; --beg) {
-      for(float end=beg; end>=-10.0f; --end) {
-        for(float s=1.0f; s<=beg-end; s+=0.1f) {
-          int n = 0;
-          if(beg < end) {
-            for(float b = beg; b < end; b += (-s)) {
-              ++n;
-            }
-          }
-          else if(beg > end) {
-            for(float b = beg; b > end; b += (-s)) {
-              ++n;
-            }
-          }
-          tf::Taskflow tf;
-          std::atomic<int> counter {0};
-          tf.parallel_for(beg, end, -s, [&] (auto) {
-            counter.fetch_add(1, std::memory_order_relaxed);
-          });
-          executor.run(tf);
-          executor.wait_for_all();
-          REQUIRE(n == counter);
-        }
-      }
-    }
-  };
-  
-  SUBCASE("Exception") {
-    exception_test();
-  }
+  //SUBCASE("Exception") {
+  //  exception_test();
+  //}
 
   SUBCASE("PositiveIntegerStep") {
     positive_integer_step(w);  
@@ -1190,13 +1194,13 @@ void parallel_for_index(unsigned w) {
     negative_integer_step(w);  
   }
   
-  SUBCASE("PositiveFloatingStep") {
-    positive_floating_step(w);  
-  }
-  
-  SUBCASE("NegativeFloatingStep") {
-    negative_floating_step(w);  
-  }
+  //SUBCASE("PositiveFloatingStep") {
+  //  positive_floating_step(w);  
+  //}
+  //
+  //SUBCASE("NegativeFloatingStep") {
+  //  negative_floating_step(w);  
+  //}
 }
 
 TEST_CASE("ParallelForIndex.1thread" * doctest::timeout(300)) {
@@ -1690,21 +1694,20 @@ void join_spawn(const int max_depth, std::atomic<int>& counter, int depth, tf::S
 }
 
 void mix_spawn(
-  const int max_depth, 
-  std::atomic<int>& counter, 
-  int depth, tf::Subflow& subflow
-)  {
+  const int max_depth, std::atomic<int>& counter, int depth, tf::Subflow& subflow
+) {
+
   if(depth < max_depth) {
     auto ret = counter.fetch_add(1, std::memory_order_relaxed);
+    subflow.emplace([&, max_depth, depth=depth+1](tf::Subflow& subflow){ 
+      mix_spawn(max_depth, counter, depth, subflow); }
+    ).name(std::string("left") + std::to_string(ret%2));
+    subflow.emplace([&, max_depth, depth=depth+1](tf::Subflow& subflow){ 
+      mix_spawn(max_depth, counter, depth, subflow); }
+    ).name(std::string("right") + std::to_string(ret%2));
     if(ret % 2) {
       subflow.detach();
     }
-    subflow.emplace([&, max_depth, depth=depth+1](tf::Subflow& subflow){ 
-      mix_spawn(max_depth, counter, depth, subflow); }
-    );
-    subflow.emplace([&, max_depth, depth=depth+1](tf::Subflow& subflow){ 
-      mix_spawn(max_depth, counter, depth, subflow); }
-    );
   }
 }
 
@@ -1747,7 +1750,7 @@ TEST_CASE("TreeSubflow" * doctest::timeout(300)) {
       tf::Taskflow tf;
       tf.emplace([&](tf::Subflow& subflow){ 
         mix_spawn(max_depth, counter, 0, subflow); 
-      });
+      }).name("top task");
 
       tf::Executor executor(W);
       executor.run(tf).get();
@@ -1756,6 +1759,64 @@ TEST_CASE("TreeSubflow" * doctest::timeout(300)) {
   }
 }
 
+// --------------------------------------------------------
+// Testcase: FibSubflow
+// --------------------------------------------------------
+int fibonacci_spawn(int n, tf::Subflow& sbf) {
+  if (n < 2) return n;
+  int res1, res2;
+  sbf.emplace([&res1, n] (tf::Subflow& sbf) { res1 = fibonacci_spawn(n - 1, sbf); } );
+  sbf.emplace([&res2, n] (tf::Subflow& sbf) { res2 = fibonacci_spawn(n - 2, sbf); } );
+  REQUIRE(sbf.joinable() == true);
+  sbf.join();
+  REQUIRE(sbf.joinable() == false);
+  return res1 + res2;
+}
+
+void fibonacci(size_t W) {
+
+  int N = 20;
+  int res = -1;  // result
+
+  tf::Executor executor(W);
+  tf::Taskflow taskflow;
+
+  taskflow.emplace([&res, N] (tf::Subflow& sbf) { 
+    res = fibonacci_spawn(N, sbf);  
+  });
+
+  executor.run(taskflow).wait();
+
+  REQUIRE(res == 6765);
+}
+
+TEST_CASE("FibSubflow.1thread") {
+  fibonacci(1);
+}
+
+TEST_CASE("FibSubflow.2threads") {
+  fibonacci(2);
+}
+
+TEST_CASE("FibSubflow.4threads") {
+  fibonacci(4);
+}
+
+TEST_CASE("FibSubflow.5threads") {
+  fibonacci(5);
+}
+
+TEST_CASE("FibSubflow.6threads") {
+  fibonacci(6);
+}
+
+TEST_CASE("FibSubflow.7threads") {
+  fibonacci(7);
+}
+
+TEST_CASE("FibSubflow.8threads") {
+  fibonacci(8);
+}
 
 // --------------------------------------------------------
 // Testcase: Composition
@@ -1962,40 +2023,6 @@ void observer(unsigned w) {
   observer->clear();
   REQUIRE(observer->num_tasks() == 0);
   tasks.clear();
-
-  // Dynamic tasking  
-  //tf::Taskflow taskflowB;
-  //std::atomic<int> num_tasks {0};
-  //// Static tasking 
-  //for(auto i=0; i < 64; i ++) {
-  //  tasks.emplace_back(taskflowB.emplace([&](tf::Subflow& subflow){
-  //    num_tasks ++;
-  //    auto num_spawn = rand() % 10 + 1;
-  //    // Randomly spawn tasks
-  //    for(auto i=0; i<num_spawn; i++) {
-  //      subflow.emplace([&](){ num_tasks ++; });
-  //    }    
-  //    if(rand() % 2) {
-  //      subflow.detach();
-  //    }
-  //    else {
-  //      // In join mode, this task will be visited twice
-  //      num_tasks ++;
-  //    }
-  //  }));
-  //}
-
-  //// Randomly specify dependency
-  //for(auto i=0; i < 64; i ++) {
-  //  for(auto j=i+1; j < 64; j++) {
-  //    if(rand()%2 == 0) {
-  //      tasks[i].precede(tasks[j]);
-  //    }
-  //  }
-  //}
-
-  //executor.run_n(taskflowB, 16).get();
-  //REQUIRE(observer->num_tasks() == num_tasks);
   
 }
 
@@ -2112,21 +2139,25 @@ TEST_CASE("LoopCond.4threads" * doctest::timeout(300)) {
 void flip_coin_cond(unsigned w) {
 
   tf::Taskflow taskflow;
+  
+  size_t rounds = 10000;
+  size_t steps = 0;
+  size_t total_steps = 0;
+  double average_steps = 0.0;
 
-  int counter;
-  double avg;
-
-  auto A = taskflow.emplace( [&](){ counter = 0; } );
-  auto B = taskflow.emplace( [&](){ ++counter; return ::rand()%2; } );
-  auto C = taskflow.emplace( [&](){ return ::rand()%2; } );
-  auto D = taskflow.emplace( [&](){ return ::rand()%2; } );
-  auto E = taskflow.emplace( [&](){ return ::rand()%2; } );
-  auto F = taskflow.emplace( [&](){ return ::rand()%2; } );
-  auto G = taskflow.emplace( [&, N=0, accu=0.0]() mutable { 
-      ++N;  // a new round
-      accu += counter;
-      avg = accu/N;
-      //std::cout << N << ": " << counter << " => avg = " << avg << '\n';
+  auto A = taskflow.emplace( [&](){ steps = 0; } );
+  auto B = taskflow.emplace( [&](){ ++steps; return std::rand()%2; } );
+  auto C = taskflow.emplace( [&](){ return std::rand()%2; } );
+  auto D = taskflow.emplace( [&](){ return std::rand()%2; } );
+  auto E = taskflow.emplace( [&](){ return std::rand()%2; } );
+  auto F = taskflow.emplace( [&](){ return std::rand()%2; } );
+  auto G = taskflow.emplace( [&]() mutable { 
+      //++N;  // a new round
+      total_steps += steps;
+      //avg = (double)accu/N;
+      //std::cout << "round " << N << ": steps=" << steps 
+      //                           << " accumulated_steps=" << accu 
+      //                           << " average_steps=" << avg << '\n';
     }
   );
 
@@ -2141,11 +2172,13 @@ void flip_coin_cond(unsigned w) {
 
   tf::Executor executor(w);
 
-  executor.run_n(taskflow, 10000).wait();
-  
-  REQUIRE(std::fabs(avg-32.0)<1.0);
+  executor.run_n(taskflow, rounds).wait();
 
-  taskflow.dump(std::cout);
+  average_steps = total_steps / (double)rounds;
+  
+  REQUIRE(std::fabs(average_steps-32.0)<1.0);
+
+  //taskflow.dump(std::cout);
 }
 
 TEST_CASE("FlipCoinCond.1thread" * doctest::timeout(300)) {
@@ -2626,5 +2659,98 @@ TEST_CASE("HierCondition.7threads" * doctest::timeout(300)) {
 TEST_CASE("HierCondition.8threads" * doctest::timeout(300)) {
   hierarchical_condition(8);
 }
+
+// ----------------------------------------------------------------------------
+// CondSubflow
+// ----------------------------------------------------------------------------
+
+void condition_subflow(unsigned W) {
+
+  tf::Taskflow taskflow;
+  tf::Executor executor(W);
+
+  const size_t I = 1000;
+
+  std::vector<size_t> data(I);
+
+  size_t i;
+
+  auto init = taskflow.emplace([&](){ i = 0; }).name("init");
+
+  auto subflow = taskflow.emplace([&](tf::Subflow& sf){
+    sf.emplace([&, i](){ 
+      REQUIRE(i<I);
+      data[i] = i*(i+1)/2*123;; 
+    }).name(std::to_string(i));
+    sf.detach();
+  }).name("subflow");
+
+  auto cond = taskflow.emplace([&](){
+    if(++i < I) return 0;
+    return 1;
+  }).name("cond");
+
+  auto stop = taskflow.emplace([](){}).name("stop");
+
+  init.precede(subflow);
+  subflow.precede(cond);
+  cond.precede(subflow, stop);
+
+  executor.run(taskflow).wait();
+
+  REQUIRE(taskflow.num_tasks() == 4 + I);
+
+  for(size_t i=0; i<data.size(); ++i) {
+    REQUIRE(data[i] == i*(i+1)/2*123);
+    data[i] = 0;
+  }
+  
+  executor.run_n(taskflow, 1);
+  executor.run_n(taskflow, 10);
+  executor.run_n(taskflow, 100);
+
+  executor.wait_for_all();
+  
+  REQUIRE(taskflow.num_tasks() == 4 + I*100);
+
+  for(size_t i=0; i<data.size(); ++i) {
+    REQUIRE(data[i] == i*(i+1)/2*123);
+  }
+
+}
+
+TEST_CASE("CondSubflow.1thread") {
+  condition_subflow(1);
+}
+
+TEST_CASE("CondSubflow.2threads") {
+  condition_subflow(2);
+}
+
+TEST_CASE("CondSubflow.3threads") {
+  condition_subflow(3);
+}
+
+TEST_CASE("CondSubflow.4threads") {
+  condition_subflow(4);
+}
+
+TEST_CASE("CondSubflow.5threads") {
+  condition_subflow(5);
+}
+
+TEST_CASE("CondSubflow.6threads") {
+  condition_subflow(6);
+}
+
+TEST_CASE("CondSubflow.7threads") {
+  condition_subflow(7);
+}
+
+TEST_CASE("CondSubflow.8threads") {
+  condition_subflow(8);
+}
+
+
 
 

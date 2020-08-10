@@ -2,10 +2,17 @@ var Releases =
 [
     [ "Master Branch (GitHub)", "master-branch.html", [
       [ "Download", "master-branch.html#master-branch_download", null ],
-      [ "Working Items", "master-branch.html#master-branch_new_features", null ],
+      [ "Working Items", "master-branch.html#master-branch_working_items", null ],
+      [ "New Features", "master-branch.html#master-branch_new_features", null ],
       [ "Bug Fixes", "master-branch.html#master-branch_bug_fixes", null ],
       [ "Deprecated Items", "master-branch.html#master-branch_deprecated_items", null ],
       [ "Miscellaneous Items", "master-branch.html#master-branch_miscellaneous_items", null ]
+    ] ],
+    [ "Release 2.5.0 (2020/06/01)", "release-2-5-0.html", [
+      [ "Download", "release-2-5-0.html#release-2-5-0_download", null ],
+      [ "New Features", "release-2-5-0.html#release-2-5-0_new_features", null ],
+      [ "Bug Fixes", "release-2-5-0.html#release-2-5-0_bug_fixes", null ],
+      [ "Miscellaneous Items", "release-2-5-0.html#release-2-5-0_miscellaneous_items", null ]
     ] ],
     [ "Release 2.4.0 (2020/03/25)", "release-2-4-0.html", [
       [ "Download", "release-2-4-0.html#release-2-4-0_download", null ],

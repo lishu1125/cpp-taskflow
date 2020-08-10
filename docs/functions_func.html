@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Cpp-Taskflow</title>
+<title>Taskflow Handbook</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <link rel="icon" type="image/x-icon" href="favicon.ico" />
 <script type="text/javascript" src="jquery.js"></script>
@@ -21,9 +21,6 @@
 <link href="search/search.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
-<script type="text/javascript">
-  $(document).ready(function() { init_search(); });
-</script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -33,25 +30,10 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname"><a href="https://github.com/cpp-taskflow/cpp-taskflow">Cpp-Taskflow</a>
-   &#160;<span id="projectnumber">2.4-master-branch</span>
+   <div id="projectname"><a href="https://github.com/taskflow/taskflow">Taskflow</a>
+   &#160;<span id="projectnumber">2.6.0-master-branch</span>
    </div>
   </td>
-   <td>        <div id="MSearchBox" class="MSearchBoxInactive">
-        <span class="left">
-          <img id="MSearchSelect" src="search/mag_sel.png"
-               onmouseover="return searchBox.OnSearchSelectShow()"
-               onmouseout="return searchBox.OnSearchSelectHide()"
-               alt=""/>
-          <input type="text" id="MSearchField" value="Search" accesskey="S"
-               onfocus="searchBox.OnSearchFieldFocus(true)" 
-               onblur="searchBox.OnSearchFieldFocus(false)" 
-               onkeyup="searchBox.OnSearchFieldChange(event)"/>
-          </span><span class="right">
-            <a id="MSearchClose" href="javascript:searchBox.CloseResultsWindow()"><img id="MSearchCloseImg" border="0" src="search/close.png" alt=""/></a>
-          </span>
-        </div>
-</td>
  </tr>
  </tbody>
 </table>
@@ -61,6 +43,15 @@
 <script type="text/javascript">
 var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+$(function() {
+  initMenu('',true,false,'search.php','Search');
+  $(document).ready(function() { init_search(); });
+});
+</script>
+<div id="main-nav"></div>
 </div><!-- top -->
 <div id="side-nav" class="ui-resizable side-nav-resizable">
   <div id="nav-tree">
@@ -102,8 +93,9 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 
 <h3><a id="index_c"></a>- c -</h3><ul>
 <li>clear()
-: <a class="el" href="classtf_1_1ExecutorObserver.html#adc78a004eaa25022a20fd16a35f607ce">tf::ExecutorObserver</a>
+: <a class="el" href="classtf_1_1ChromeObserver.html#a3948e57186155a6934c100447cb9332d">tf::ChromeObserver</a>
 , <a class="el" href="classtf_1_1Taskflow.html#a1f00bbe72a1553c9656ecae4d98bb9af">tf::Taskflow</a>
+, <a class="el" href="classtf_1_1TFProfObserver.html#a5e1f63034a96a5a79cef6da412efd203">tf::TFProfObserver</a>
 </li>
 <li>composed_of()
 : <a class="el" href="classtf_1_1FlowBuilder.html#a0a01192f4f92c15380a4f259e2fec2d9">tf::FlowBuilder</a>
@@ -113,10 +105,10 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 : <a class="el" href="classtf_1_1cudaFlow.html#af03e04771b655f9e629eb4c22e19b19f">tf::cudaFlow</a>
 </li>
 <li>cudaFlow()
-: <a class="el" href="classtf_1_1cudaFlow.html#a8e17934efb9e502acc8491b49d9bdf7b">tf::cudaFlow</a>
+: <a class="el" href="classtf_1_1cudaFlow.html#af1260436038a5ac06b69daa6e0b6784e">tf::cudaFlow</a>
 </li>
 <li>cudaTask()
-: <a class="el" href="classtf_1_1cudaTask.html#a367cf46c1ea828de4502a2ddc805c094">tf::cudaTask</a>
+: <a class="el" href="classtf_1_1cudaTask.html#a68942b759c0420da99b639a8de3cc3d1">tf::cudaTask</a>
 </li>
 </ul>
 
@@ -125,15 +117,13 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 <li>detach()
 : <a class="el" href="classtf_1_1Subflow.html#acfdedc7e9676126e9a38ecf7b5a37864">tf::Subflow</a>
 </li>
-<li>detached()
-: <a class="el" href="classtf_1_1Subflow.html#a185a0cba35c5f208029ea207e9be0b5f">tf::Subflow</a>
-</li>
 <li>device()
-: <a class="el" href="classtf_1_1cudaFlow.html#a2905a7772fb2c25753e1ae72bb05861b">tf::cudaFlow</a>
+: <a class="el" href="classtf_1_1cudaFlow.html#ad8c0664e4dc3748f043eaa31b69c11cc">tf::cudaFlow</a>
 </li>
 <li>dump()
-: <a class="el" href="classtf_1_1ExecutorObserver.html#a20f77a06e0f10dc67f7a5742add5b00a">tf::ExecutorObserver</a>
+: <a class="el" href="classtf_1_1ChromeObserver.html#a414d60cee91db1d3924636fcea5f4ea7">tf::ChromeObserver</a>
 , <a class="el" href="classtf_1_1Taskflow.html#a9c4900da1831dce708664a06b3e3a3fb">tf::Taskflow</a>
+, <a class="el" href="classtf_1_1TFProfObserver.html#a9f1e839e2a8d3abd0b91ac454f0d078b">tf::TFProfObserver</a>
 </li>
 </ul>
 
@@ -150,7 +140,7 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 , <a class="el" href="classtf_1_1TaskView.html#a29d974f0b79e5e8da9c935dfa28492d9">tf::TaskView</a>
 </li>
 <li>Executor()
-: <a class="el" href="classtf_1_1Executor.html#ac4211f9718d30c2a0589840103fee46f">tf::Executor</a>
+: <a class="el" href="classtf_1_1Executor.html#a4910e89d89146b6d563d598b795eb4a9">tf::Executor</a>
 </li>
 </ul>
 
@@ -190,8 +180,8 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 <li>join()
 : <a class="el" href="classtf_1_1Subflow.html#a59fcac1323e70d920088dd37bd0be245">tf::Subflow</a>
 </li>
-<li>joined()
-: <a class="el" href="classtf_1_1Subflow.html#afb178f1e81f2d37652803023da5847ce">tf::Subflow</a>
+<li>joinable()
+: <a class="el" href="classtf_1_1Subflow.html#a4c4b56476ca907ceca75dd8a861e1145">tf::Subflow</a>
 </li>
 </ul>
 
@@ -215,7 +205,7 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 
 <h3><a id="index_m"></a>- m -</h3><ul>
 <li>make_observer()
-: <a class="el" href="classtf_1_1Executor.html#a7f43cde72d3e0a17e2d006cbe7a41ff3">tf::Executor</a>
+: <a class="el" href="classtf_1_1Executor.html#a3e68a0d779cfee1554c88c2596ae9000">tf::Executor</a>
 </li>
 <li>memcpy()
 : <a class="el" href="classtf_1_1cudaFlow.html#ad37637606f0643f360e9eda1f9a6e559">tf::cudaFlow</a>
@@ -243,6 +233,9 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 <li>num_domains()
 : <a class="el" href="classtf_1_1Executor.html#a8acfc81ae6a64989761ce229262c9a21">tf::Executor</a>
 </li>
+<li>num_observers()
+: <a class="el" href="classtf_1_1Executor.html#ab92083be20ea77b9fb3eb8ea2d26af68">tf::Executor</a>
+</li>
 <li>num_strong_dependents()
 : <a class="el" href="classtf_1_1Task.html#ad49a92e8858c3c298bed0215e341b66b">tf::Task</a>
 , <a class="el" href="classtf_1_1TaskView.html#ac7bcb9cb1ee8f020de56fdbf8e651388">tf::TaskView</a>
@@ -253,8 +246,9 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 , <a class="el" href="classtf_1_1TaskView.html#aff16d269ac75cffa55a312593f20d30d">tf::TaskView</a>
 </li>
 <li>num_tasks()
-: <a class="el" href="classtf_1_1ExecutorObserver.html#a93d51307198abb9a1fc00a14904c3dd0">tf::ExecutorObserver</a>
+: <a class="el" href="classtf_1_1ChromeObserver.html#a44032b7607de5dd929683739f4df9ef2">tf::ChromeObserver</a>
 , <a class="el" href="classtf_1_1Taskflow.html#af4f03bca084deb5c2228ac8936d33649">tf::Taskflow</a>
+, <a class="el" href="classtf_1_1TFProfObserver.html#a8b3b0bee8762af654cfebd2bb2ee98ed">tf::TFProfObserver</a>
 </li>
 <li>num_topologies()
 : <a class="el" href="classtf_1_1Executor.html#a6d6c28ed58211e4c27a99571e5bf0b6c">tf::Executor</a>
@@ -271,10 +265,10 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 
 <h3><a id="index_o"></a>- o -</h3><ul>
 <li>on_entry()
-: <a class="el" href="classtf_1_1ExecutorObserverInterface.html#ace7c0e2f07aa0389e479e9f949cce758">tf::ExecutorObserverInterface</a>
+: <a class="el" href="classtf_1_1ObserverInterface.html#afa57654edd6d0fcf188a6064823f3048">tf::ObserverInterface</a>
 </li>
 <li>on_exit()
-: <a class="el" href="classtf_1_1ExecutorObserverInterface.html#a02c91f5c3839bde52e7b172170887acf">tf::ExecutorObserverInterface</a>
+: <a class="el" href="classtf_1_1ObserverInterface.html#a8fcff02bfcea581d280e4de0247760d3">tf::ObserverInterface</a>
 </li>
 <li>operator!=()
 : <a class="el" href="classtf_1_1Task.html#af4e13636e3a494297b30c2b2e483f095">tf::Task</a>
@@ -304,6 +298,9 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 , <a class="el" href="classtf_1_1FlowBuilder.html#af7c4a5d732d49bd63d554a92cd240f3f">tf::FlowBuilder</a>
 , <a class="el" href="classtf_1_1Task.html#a8c78c453295a553c1c016e4062da8588">tf::Task</a>
 </li>
+<li>predicate()
+: <a class="el" href="classtf_1_1cudaFlow.html#adbd46a1ef9f5ae9e0848ccbefa1e65ee">tf::cudaFlow</a>
+</li>
 </ul>
 
 
@@ -318,7 +315,10 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 : <a class="el" href="classtf_1_1FlowBuilder.html#ae10e34cf00f7128d23e24c524c18d970">tf::FlowBuilder</a>
 </li>
 <li>remove_observer()
-: <a class="el" href="classtf_1_1Executor.html#a3ed11b270f0c7fe1c55a81c60d20411f">tf::Executor</a>
+: <a class="el" href="classtf_1_1Executor.html#a31081f492c376f7b798de0e430534531">tf::Executor</a>
+</li>
+<li>repeat()
+: <a class="el" href="classtf_1_1cudaFlow.html#a1eeebb4bbd6436a3145ff950ce282ac4">tf::cudaFlow</a>
 </li>
 <li>reset()
 : <a class="el" href="classtf_1_1Task.html#a302f51ed717d0a4e99edc50f92a571f3">tf::Task</a>
@@ -341,17 +341,14 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 
 <h3><a id="index_s"></a>- s -</h3><ul>
 <li>set_up()
-: <a class="el" href="classtf_1_1ExecutorObserverInterface.html#ae9fc3e8778dbb52175fe6ff13eb1672d">tf::ExecutorObserverInterface</a>
+: <a class="el" href="classtf_1_1ObserverInterface.html#a41e6e62f12bf9d9dc4fa74632f6825d9">tf::ObserverInterface</a>
 </li>
 <li>stream()
 : <a class="el" href="classtf_1_1cudaFlow.html#a5ccc24918db4d63c50f26b68d17fd452">tf::cudaFlow</a>
 </li>
-<li>Subflow()
-: <a class="el" href="classtf_1_1Subflow.html#abe853a60943b8ecbf10ab2e27d6769e1">tf::Subflow</a>
-</li>
 <li>succeed()
 : <a class="el" href="classtf_1_1cudaTask.html#a4a9ca1a34bac47e4c9b04eb4fb2f7775">tf::cudaTask</a>
-, <a class="el" href="classtf_1_1FlowBuilder.html#a963e239f17485d0e05a2477f0732df09">tf::FlowBuilder</a>
+, <a class="el" href="classtf_1_1FlowBuilder.html#a53927b2b4198b29568f20c43d21ad526">tf::FlowBuilder</a>
 , <a class="el" href="classtf_1_1Task.html#a331b1b726555072e7c7d10941257f664">tf::Task</a>
 </li>
 </ul>
@@ -365,13 +362,17 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 : <a class="el" href="classtf_1_1Taskflow.html#ade7fc641d136a3f8c96682c08040626a">tf::Taskflow</a>
 </li>
 <li>TaskView()
-: <a class="el" href="classtf_1_1TaskView.html#a7c7b4378a67f39ee33724a4f96bc6abd">tf::TaskView</a>
+: <a class="el" href="classtf_1_1TaskView.html#ada6755eb9db8badbf290eb25532a8d7f">tf::TaskView</a>
 </li>
 <li>this_worker_id()
 : <a class="el" href="classtf_1_1Executor.html#a6487d589cb1f6b078b69fd3bb1082345">tf::Executor</a>
 </li>
 <li>transform_reduce()
-: <a class="el" href="classtf_1_1FlowBuilder.html#a08d669f2286cb90fd5ba7dade1e93fef">tf::FlowBuilder</a>
+: <a class="el" href="classtf_1_1FlowBuilder.html#a9b81ad3b206a63adff8b8bc423f8c425">tf::FlowBuilder</a>
+</li>
+<li>type()
+: <a class="el" href="classtf_1_1Task.html#af2df95e6c8c5870c033d692e88af0bc2">tf::Task</a>
+, <a class="el" href="classtf_1_1TaskView.html#aa20d7b5796064c3ab194e6d7ebe2adb1">tf::TaskView</a>
 </li>
 </ul>
 
@@ -397,8 +398,8 @@ $(document).ready(function(){initNavTree('functions_func.html','');});
 <li>~Executor()
 : <a class="el" href="classtf_1_1Executor.html#a5a511b0cc23b264826373d3dabcef670">tf::Executor</a>
 </li>
-<li>~ExecutorObserverInterface()
-: <a class="el" href="classtf_1_1ExecutorObserverInterface.html#a239e48ee46d73bcd5a3f28b3e1b8fe50">tf::ExecutorObserverInterface</a>
+<li>~ObserverInterface()
+: <a class="el" href="classtf_1_1ObserverInterface.html#adfd71c3af3ae2ea4f41eed26c1b6f604">tf::ObserverInterface</a>
 </li>
 <li>~Taskflow()
 : <a class="el" href="classtf_1_1Taskflow.html#a00325e9799c833b75455ba1407b2695c">tf::Taskflow</a>

@@ -1,7 +1,7 @@
 # Benchmarks
 
 This folder contains a set of benchmarks to evaluate and compare the performance 
-of Cpp-Taskflow with the following task programming frameworks:
+of Taskflow with the following task programming frameworks:
 
   + [OpenMP Task Dependency Clause][OpenMP Tasking]
   + [Intel Threading Building Blocks (TBB) FlowGraph][TBB FlowGraph]
@@ -10,7 +10,7 @@ To compile the benchmark sources,
 enable the option `TF_BUILD_BENCHMARKS` in cmake build:
 
 ```bash
-~$ mkdir build        # create a build folder under cpp-taskflow/
+~$ mkdir build        # create a build folder under taskflow/
 ~$ cd build
 ~$ cmake ../ -DTF_BUILD_BENCHMARKS=ON
 ~$ make 
@@ -37,7 +37,7 @@ including thread count, rounds to average, tasking methods, and plot.
 ```
 
 For example, the following command benchmarks 
-Cpp-Taskflow (tf), OpenMP (omp), and TBB (tbb)
+Taskflow (tf), OpenMP (omp), and TBB (tbb)
 on graph traversal, wavefront, and linear chain applications
 across 1, 4, 8, and 16 threads,
 with data collected in an average of ten runs. 

@@ -38,7 +38,7 @@ __global__ void k_single_add(T* ptr, int i, T value) {
 TEST_CASE("Builder" * doctest::timeout(300)) {
 
   tf::cudaGraph G;
-  tf::cudaFlow cf(G);
+  tf::cudaFlow cf(G, [](){ return true; });
 
   int source = 1;
   int target = 1;
@@ -820,67 +820,67 @@ void worker_id(unsigned N, unsigned M) {
   executor.run_n(taskflow, 100).wait();
 }
 
-TEST_CASE("WorkerID.1C.1G") {
+TEST_CASE("WorkerID.1C1G") {
   worker_id(1, 1);
 }
 
-TEST_CASE("WorkerID.1C.2G") {
+TEST_CASE("WorkerID.1C2G") {
   worker_id(1, 2);
 }
 
-TEST_CASE("WorkerID.1C.3G") {
+TEST_CASE("WorkerID.1C3G") {
   worker_id(1, 3);
 }
 
-TEST_CASE("WorkerID.1C.4G") {
+TEST_CASE("WorkerID.1C4G") {
   worker_id(1, 4);
 }
 
-TEST_CASE("WorkerID.2C.1G") {
+TEST_CASE("WorkerID.2C1G") {
   worker_id(2, 1);
 }
 
-TEST_CASE("WorkerID.2C.2G") {
+TEST_CASE("WorkerID.2C2G") {
   worker_id(2, 2);
 }
 
-TEST_CASE("WorkerID.2C.3G") {
+TEST_CASE("WorkerID.2C3G") {
   worker_id(2, 3);
 }
 
-TEST_CASE("WorkerID.2C.4G") {
+TEST_CASE("WorkerID.2C4G") {
   worker_id(2, 4);
 }
 
-TEST_CASE("WorkerID.3C.1G") {
+TEST_CASE("WorkerID.3C1G") {
   worker_id(3, 1);
 }
 
-TEST_CASE("WorkerID.3C.2G") {
+TEST_CASE("WorkerID.3C2G") {
   worker_id(3, 2);
 }
 
-TEST_CASE("WorkerID.3C.3G") {
+TEST_CASE("WorkerID.3C3G") {
   worker_id(3, 3);
 }
 
-TEST_CASE("WorkerID.3C.4G") {
+TEST_CASE("WorkerID.3C4G") {
   worker_id(3, 4);
 }
 
-TEST_CASE("WorkerID.4C.1G") {
+TEST_CASE("WorkerID.4C1G") {
   worker_id(4, 1);
 }
 
-TEST_CASE("WorkerID.4C.2G") {
+TEST_CASE("WorkerID.4C2G") {
   worker_id(4, 2);
 }
 
-TEST_CASE("WorkerID.4C.3G") {
+TEST_CASE("WorkerID.4C3G") {
   worker_id(4, 3);
 }
 
-TEST_CASE("WorkerID.4C.4G") {
+TEST_CASE("WorkerID.4C4G") {
   worker_id(4, 4);
 }
 
@@ -932,67 +932,67 @@ void multiruns(unsigned N, unsigned M) {
   executor.run(taskflow).wait();
 }
 
-TEST_CASE("Multiruns.1C.1G") {
+TEST_CASE("Multiruns.1C1G") {
   multiruns(1, 1);
 }
 
-TEST_CASE("Multiruns.1C.2G") {
+TEST_CASE("Multiruns.1C2G") {
   multiruns(1, 2);
 }
 
-TEST_CASE("Multiruns.1C.3G") {
+TEST_CASE("Multiruns.1C3G") {
   multiruns(1, 3);
 }
 
-TEST_CASE("Multiruns.1C.4G") {
+TEST_CASE("Multiruns.1C4G") {
   multiruns(1, 4);
 }
 
-TEST_CASE("Multiruns.2C.1G") {
+TEST_CASE("Multiruns.2C1G") {
   multiruns(2, 1);
 }
 
-TEST_CASE("Multiruns.2C.2G") {
+TEST_CASE("Multiruns.2C2G") {
   multiruns(2, 2);
 }
 
-TEST_CASE("Multiruns.2C.3G") {
+TEST_CASE("Multiruns.2C3G") {
   multiruns(2, 3);
 }
 
-TEST_CASE("Multiruns.2C.4G") {
+TEST_CASE("Multiruns.2C4G") {
   multiruns(2, 4);
 }
 
-TEST_CASE("Multiruns.3C.1G") {
+TEST_CASE("Multiruns.3C1G") {
   multiruns(3, 1);
 }
 
-TEST_CASE("Multiruns.3C.2G") {
+TEST_CASE("Multiruns.3C2G") {
   multiruns(3, 2);
 }
 
-TEST_CASE("Multiruns.3C.3G") {
+TEST_CASE("Multiruns.3C3G") {
   multiruns(3, 3);
 }
 
-TEST_CASE("Multiruns.3C.4G") {
+TEST_CASE("Multiruns.3C4G") {
   multiruns(3, 4);
 }
 
-TEST_CASE("Multiruns.4C.1G") {
+TEST_CASE("Multiruns.4C1G") {
   multiruns(4, 1);
 }
 
-TEST_CASE("Multiruns.4C.2G") {
+TEST_CASE("Multiruns.4C2G") {
   multiruns(4, 2);
 }
 
-TEST_CASE("Multiruns.4C.3G") {
+TEST_CASE("Multiruns.4C3G") {
   multiruns(4, 3);
 }
 
-TEST_CASE("Multiruns.4C.4G") {
+TEST_CASE("Multiruns.4C4G") {
   multiruns(4, 4);
 }
 
@@ -1209,6 +1209,92 @@ TEST_CASE("Loop") {
   cputask.precede(gputask);
   gputask.precede(condition);
   condition.precede(gputask, freetask);
+  
+  executor.run(taskflow).wait();
+}
+
+// ----------------------------------------------------------------------------
+// Predicate
+// ----------------------------------------------------------------------------
+
+TEST_CASE("Predicate") {
+
+  tf::Taskflow taskflow;
+  tf::Executor executor;
+
+  const unsigned n = 1000;
+    
+  int* cpu = nullptr;
+  int* gpu = nullptr;
+
+  auto cputask = taskflow.emplace([&](){
+    cpu = static_cast<int*>(std::calloc(n, sizeof(int)));
+    REQUIRE(cudaMalloc(&gpu, n*sizeof(int)) == cudaSuccess);
+    REQUIRE(cudaMemcpy(gpu, cpu, n*sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
+  });
+
+  auto gputask = taskflow.emplace([&](tf::cudaFlow& cf) {
+    dim3 g = {(n+255)/256, 1, 1};
+    dim3 b = {256, 1, 1};
+    auto kernel = cf.kernel(g, b, 0, k_add<int>, gpu, n, 1);
+    auto copy = cf.copy(cpu, gpu, n);
+    kernel.precede(copy);
+    cf.predicate([i=100]() mutable { return i-- == 0; });
+  });
+
+  auto freetask = taskflow.emplace([&](){
+    for(unsigned i=0; i<n; ++i) {
+      REQUIRE(cpu[i] == 100);
+    }
+    REQUIRE(cudaFree(gpu) == cudaSuccess);
+    std::free(cpu);
+  });
+
+  cputask.precede(gputask);
+  gputask.precede(freetask);
+  
+  executor.run(taskflow).wait();
+}
+
+// ----------------------------------------------------------------------------
+// Repeat
+// ----------------------------------------------------------------------------
+
+TEST_CASE("Repeat") {
+
+  tf::Taskflow taskflow;
+  tf::Executor executor;
+
+  const unsigned n = 1000;
+    
+  int* cpu = nullptr;
+  int* gpu = nullptr;
+
+  auto cputask = taskflow.emplace([&](){
+    cpu = static_cast<int*>(std::calloc(n, sizeof(int)));
+    REQUIRE(cudaMalloc(&gpu, n*sizeof(int)) == cudaSuccess);
+    REQUIRE(cudaMemcpy(gpu, cpu, n*sizeof(int), cudaMemcpyHostToDevice) == cudaSuccess);
+  });
+
+  auto gputask = taskflow.emplace([&](tf::cudaFlow& cf) {
+    dim3 g = {(n+255)/256, 1, 1};
+    dim3 b = {256, 1, 1};
+    auto kernel = cf.kernel(g, b, 0, k_add<int>, gpu, n, 1);
+    auto copy = cf.copy(cpu, gpu, n);
+    kernel.precede(copy);
+    cf.repeat(100);
+  });
+
+  auto freetask = taskflow.emplace([&](){
+    for(unsigned i=0; i<n; ++i) {
+      REQUIRE(cpu[i] == 100);
+    }
+    REQUIRE(cudaFree(gpu) == cudaSuccess);
+    std::free(cpu);
+  });
+
+  cputask.precede(gputask);
+  gputask.precede(freetask);
   
   executor.run(taskflow).wait();
 }

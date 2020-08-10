@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['quick_20start',['Quick Start',['../index.html',1,'']]]
+  ['graph_20traversal',['Graph Traversal',['../graphtraversal.html',1,'Examples']]]
 ];

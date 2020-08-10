@@ -2,9 +2,13 @@
 
 #include "error.hpp"
 #include "../declarations.hpp"
+#include "../utility/iterator.hpp"
 #include "../utility/object_pool.hpp"
 #include "../utility/traits.hpp"
 #include "../utility/passive_vector.hpp"
+#include "../utility/singleton.hpp"
+#include "../utility/uuid.hpp"
+#include "../utility/os.hpp"
 #include "../nstd/variant.hpp"
 
 #if defined(__CUDA__) || defined(__CUDACC__)
@@ -48,6 +52,8 @@ class Graph {
     Graph& operator = (Graph&&);
     
     void clear();
+    void clear_detached();
+    void merge(Graph&&);
 
     bool empty() const;
 
@@ -69,7 +75,8 @@ class Graph {
 
 // Class: Node
 class Node {
-
+  
+  friend class Graph;
   friend class Task;
   friend class TaskView;
   friend class Topology;
@@ -81,8 +88,8 @@ class Node {
   TF_ENABLE_POOLABLE_ON_THIS;
 
   // state bit flag
-  constexpr static int SPAWNED = 0x1;
-  constexpr static int BRANCH  = 0x2;
+  constexpr static int BRANCHED = 0x1;
+  constexpr static int DETACHED = 0x2;
   
   // static work handle
   struct StaticWork {
@@ -144,18 +151,19 @@ class Node {
     ConditionWork,    // conditional tasking
     ModuleWork        // composable tasking
   >;
-
-  // variant index
-  constexpr static auto STATIC_WORK    = get_index_v<StaticWork, handle_t>;
-  constexpr static auto DYNAMIC_WORK   = get_index_v<DynamicWork, handle_t>;
-  constexpr static auto CONDITION_WORK = get_index_v<ConditionWork, handle_t>; 
-  constexpr static auto MODULE_WORK    = get_index_v<ModuleWork, handle_t>; 
-
-#ifdef TF_ENABLE_CUDA
-  constexpr static auto CUDAFLOW_WORK  = get_index_v<cudaFlowWork, handle_t>; 
-#endif
   
   public:
+  
+  // variant index
+  constexpr static auto PLACEHOLDER_WORK = get_index_v<nstd::monostate, handle_t>;
+  constexpr static auto STATIC_WORK      = get_index_v<StaticWork, handle_t>;
+  constexpr static auto DYNAMIC_WORK     = get_index_v<DynamicWork, handle_t>;
+  constexpr static auto CONDITION_WORK   = get_index_v<ConditionWork, handle_t>; 
+  constexpr static auto MODULE_WORK      = get_index_v<ModuleWork, handle_t>; 
+
+#ifdef TF_ENABLE_CUDA
+  constexpr static auto CUDAFLOW_WORK = get_index_v<cudaFlowWork, handle_t>; 
+#endif
 
     template <typename ...Args>
     Node(Args&&... args);
@@ -254,7 +262,7 @@ inline Node::~Node() {
     std::vector<Node*> nodes;
 
     std::move(
-     subgraph._nodes.begin(), subgraph._nodes.end(), std::back_inserter(nodes)
+      subgraph._nodes.begin(), subgraph._nodes.end(), std::back_inserter(nodes)
     );
     subgraph._nodes.clear();
 
@@ -426,7 +434,7 @@ inline void Node::_set_up_join_counter() {
 
   for(auto p : _dependents) {
     if(p->_handle.index() == Node::CONDITION_WORK) {
-      _set_state(Node::BRANCH);
+      _set_state(Node::BRANCHED);
     }
     else {
       c++;
@@ -481,6 +489,28 @@ inline void Graph::clear() {
     np.recycle(node);
   }
   _nodes.clear();
+}
+
+// Procedure: clear_detached
+inline void Graph::clear_detached() {
+
+  auto mid = std::partition(_nodes.begin(), _nodes.end(), [] (Node* node) {
+    return !(node->_has_state(Node::DETACHED));
+  });
+  
+  auto& np = _node_pool();
+  for(auto itr = mid; itr != _nodes.end(); ++itr) {
+    np.recycle(*itr);
+  }
+  _nodes.resize(std::distance(_nodes.begin(), mid));
+}
+
+// Procedure: merge
+inline void Graph::merge(Graph&& g) {
+  for(auto n : g._nodes) {
+    _nodes.push_back(n);
+  }
+  g._nodes.clear();
 }
 
 // Function: size

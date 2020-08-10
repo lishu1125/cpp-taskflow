@@ -32,13 +32,13 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "Cpp-Taskflow"
+PROJECT_NAME           = "Taskflow"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 2.4-master-branch
+PROJECT_NUMBER         = 2.6.0-master-branch
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -258,7 +258,10 @@ ALIASES                = "std_invoke=<a href=\"https://en.cppreference.com/w/cpp
                          "GraphVizOnline=<a href=\"https://dreampuf.github.io/GraphvizOnline/\">GraphViz Online</a>" \
                          "CPP17=<a href=\"https://en.wikipedia.org/wiki/C%2B%2B17\">C++17</a>" \
                          "nvcc=<a href=\"https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html\">nvcc</a>"\
-                         "nvidia_smi=<a href=\"https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html\">nvidia-smi</a>"
+                         "nvidia_smi=<a href=\"https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html\">nvidia-smi</a>"\
+                         "SLOCCount=<a href=\"https://dwheeler.com/sloccount/\">SLOCCount</a>"\
+                         "TBB=<a href=\"https://github.com/oneapi-src/oneTBB\">Intel TBB</a>"\
+                         "StarPU=<a href=\"http://starpu.gforge.inria.fr/\">StarPU</a>"
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
@@ -819,9 +822,13 @@ INPUT                  = ../taskflow/core/error.hpp \
                          ../taskflow/cuda/cuda_error.hpp \
                          ../taskflow/cuda/cuda_task.hpp \
                          ../taskflow/cuda/cuda_flow.hpp \
+                         ../taskflow/version.hpp \
+                         ../taskflow/taskflow.hpp \
                          QuickStart.dox \
+                         install/install.dox \
                          releases/releases.dox \
                          releases/master-branch.dox \
+                         releases/release-2.5.0.dox \
                          releases/release-2.4.0.dox \
                          releases/release-2.3.1.dox \
                          releases/release-2.3.0.dox \
@@ -836,8 +843,18 @@ INPUT                  = ../taskflow/core/error.hpp \
                          cookbook/Chapter4.dox \
                          cookbook/Chapter5.dox \
                          cookbook/Chapter6.dox \
+                         examples/examples.dox \
+                         examples/wavefront.dox \
+                         examples/matrix_multiplication.dox \
+                         examples/fibonacci.dox \
+                         examples/kmeans.dox \
+                         examples/flipcoins.dox \
+                         examples/graph_traversal.dox \
+                         usecases/usecases.dox \
+                         usecases/opentimer.dox \
+                         usecases/dreamplace.dox \
                          FAQ.dox \
-                         reference/reference.dox \
+                         references/references.dox \
                          header.html
 
 # This tag can be used to specify the character encoding of the source files
@@ -1189,7 +1206,13 @@ HTML_EXTRA_STYLESHEET  =
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = favicon/favicon.ico
+HTML_EXTRA_FILES       = favicon/favicon.ico \
+                         references/ipdps19.pdf \
+                         references/huang_15_01.pdf \
+                         references/lin_19_01.pdf \
+                         references/mm19.pdf \
+                         references/hpec19.pdf \
+                         references/2004.10908v2.pdf
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
@@ -1456,7 +1479,7 @@ ECLIPSE_DOC_ID         = org.doxygen.Project
 # The default value is: NO.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-DISABLE_INDEX          = YES
+DISABLE_INDEX          = NO
 
 # The GENERATE_TREEVIEW tag is used to specify whether a tree-like index
 # structure should be generated to display hierarchical information. If the tag
@@ -1762,7 +1785,7 @@ LATEX_EXTRA_STYLESHEET =
 # markers available.
 # This tag requires that the tag GENERATE_LATEX is set to YES.
 
-LATEX_EXTRA_FILES      =
+LATEX_EXTRA_FILES      = 
 
 # If the PDF_HYPERLINKS tag is set to YES, the LaTeX that is generated is
 # prepared for conversion to PDF (using ps2pdf or pdflatex). The PDF file will

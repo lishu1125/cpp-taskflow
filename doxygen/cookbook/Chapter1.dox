@@ -7,11 +7,11 @@ It has a flat task hierarchy and cannot spawn new tasks from a running dependenc
 
 @section C1_CreateATaskDependencyGraph Create a Task Dependency Graph
 
-A task in Cpp-Taskflow is a @em callable object for which the operation @std_invoke is applicable.
+A task in %Taskflow is a @em callable object for which the operation @std_invoke is applicable.
 It can be either 
 a functor, a lambda expression, a bind expression, or a class objects with @c operator() overloaded.
 All tasks are created from tf::Taskflow, the class that manages a task dependency graph.
-Cpp-Taskflow provides two methods, tf::Taskflow::placeholder and tf::Taskflow::emplace to create a task.
+%Taskflow provides two methods, tf::Taskflow::placeholder and tf::Taskflow::emplace to create a task.
 
 @code{.cpp}
 1: tf::Taskflow taskflow;
@@ -63,7 +63,7 @@ Debrief:
 @li Line 7 adds a dependency link from A to B
 @li Line 9-14 dumps the task attributes 
 
-Cpp-Taskflow uses the general-purpose polymorphic function wrapper std::function
+%Taskflow uses general-purpose polymorphic function wrapper, std::function,
 to store and invoke a callable in a task.
 You need to follow its contract to create a task.
 
@@ -91,7 +91,7 @@ You can dump a taskflow to a DOT format and visualize the graph using free onlin
 16:   B.precede(D);
 17:   C.precede(D);
 18:
-19:   taskflkow.dump(std::cout);
+19:   taskflow.dump(std::cout);
 20: }
 @endcode
 
@@ -164,7 +164,23 @@ Debrief:
 You can change the name and work of a task at anytime before running the graph.
 The later assignment overwrites the previous values.
 
+@section C1_TraverseAdjacentTasks Traverse Adjacent Tasks
 
+You can iterate the successor list and the dependent list of a task by using tf::Task::for_each_successor
+and tf::Task::for_each_dependent, respectively.
+Each method takes a lambda and applies it to a successor or a dependent being traversed.
+
+@code{.cpp}
+// traverse all successors of my_task
+my_task.for_each_successor([s=0] (tf::Task successor) mutable {
+  std::cout << "successor " << s++ << '\n';
+});
+
+// traverse all dependents of my_task
+my_task.for_each_dependent([d=0] (tf::Task dependent) mutable {
+  std::cout << "dependent " << d++ << '\n';
+});
+@endcode
 
 
 @section C1_LifetimeOfATask Lifetime of A Task

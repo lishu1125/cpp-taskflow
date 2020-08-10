@@ -8,7 +8,7 @@
 int main(){
 
   tf::Executor executor;
-  tf::Taskflow taskflow;
+  tf::Taskflow taskflow("simple");
 
   auto A = taskflow.emplace([]() { std::cout << "TaskA\n"; });
   auto B = taskflow.emplace([]() { std::cout << "TaskB\n"; });
@@ -23,6 +23,8 @@ int main(){
                                     //  +---+           +-^-+          
   executor.run(taskflow).wait();    //    |     +---+     |            
                                     //    +---->| C |-----+            
-  return 0;                         //          +---+
+                                    //          +---+
+
+  return 0;
 }
 

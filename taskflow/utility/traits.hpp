@@ -3,10 +3,14 @@
 #include <type_traits>
 #include <iterator>
 #include <iostream>
+#include <fstream>
 #include <mutex>
-#include <deque>
+#include <stack>
+#include <queue>
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include <atomic>
 #include <thread>
 #include <future>
 #include <functional>
@@ -16,6 +20,7 @@
 #include <list>
 #include <forward_list>
 #include <numeric>
+#include <random>
 #include <iomanip>
 #include <cassert>
 #include <cmath>
@@ -30,7 +35,7 @@ namespace tf {
 //-----------------------------------------------------------------------------
 
 // Macro to check whether a class has a member function
-#define define_has_member(member_name)                                     \
+#define TF_DEFINE_HAS_MEMBER(member_name)                                  \
 template <typename T>                                                      \
 class has_member_##member_name                                             \
 {                                                                          \
@@ -42,7 +47,7 @@ class has_member_##member_name                                             \
     static constexpr bool value = sizeof(test<T>(0)) == sizeof(yes_type);  \
 }
 
-#define has_member(class_, member_name)  has_member_##member_name<class_>::value
+#define TF_HAS_MEMBER(class_, member_name) has_member_##member_name<class_>::value
 
 // Struct: dependent_false
 template <typename... T>
